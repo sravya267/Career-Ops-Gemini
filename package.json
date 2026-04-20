@@ -4,6 +4,7 @@
   "description": "AI-powered job search pipeline built on Claude Code",
   "scripts": {
     "web": "node web/server.mjs",
+    "sync-data": "node scripts/sync-data.mjs",
     "doctor": "node doctor.mjs",
     "verify": "node verify-pipeline.mjs",
     "normalize": "node normalize-statuses.mjs",
@@ -32,6 +33,7 @@
   },
   "license": "MIT",
   "dependencies": {
+    "@google-cloud/storage": "^7.0.0",
     "express": "^4.22.1",
     "js-yaml": "^4.1.1",
     "playwright": "^1.58.1"

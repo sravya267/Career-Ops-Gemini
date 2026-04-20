@@ -1,21 +1,19 @@
-import fs from 'fs';
+import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 
-const reScore = /(\d+\.?\d*)\/5/;
+const reScore      = /(\d+\.?\d*)\/5/;
 const reReportLink = /\[(\d+)\]\(([^)]+)\)/;
-const reReportURL = /^\*\*URL:\*\*\s*(https?:\/\/\S+)/m;
-const reBatchID = /^\*\*Batch ID:\*\*\s*(\d+)/m;
-const reArchetype = /\*\*Arquetipo(?:\s+detectado)?(?::\*\*|\*\*\s*\|)\s*(.+)/i;
-const reTlDr = /\*\*TL;DR(?::\*\*|\*\*\s*\|)\s*(.+)/i;
-const reRemote = /\*\*Remote\*\*\s*\|\s*(.+)/i;
-const reComp = /\*\*Comp\*\*\s*\|\s*(.+)/i;
+const reArchetype  = /\*\*Arquetipo(?:\s+detectado)?(?::\*\*|\*\*\s*\|)\s*(.+)/i;
+const reTlDr       = /\*\*TL;DR(?::\*\*|\*\*\s*\|)\s*(.+)/i;
+const reRemote     = /\*\*Remote\*\*\s*\|\s*(.+)/i;
+const reComp       = /\*\*Comp\*\*\s*\|\s*(.+)/i;
+const reReportURL  = /^\*\*URL:\*\*\s*(https?:\/\/\S+)/m;
 
-function normalizeStatus(raw) {
+export function normalizeStatus(raw) {
   let s = raw.replace(/\*\*/g, '').trim().toLowerCase();
-  // Strip trailing date like "applied 2026-03-12"
   const dateIdx = s.indexOf(' 202');
   if (dateIdx > 0) s = s.slice(0, dateIdx).trim();
 
@@ -34,54 +32,31 @@ function cleanCell(s) {
   return s.trim().replace(/\|$/, '').trim();
 }
 
-function loadReportMeta(reportPath) {
-  try {
-    const full = path.resolve(ROOT, reportPath);
-    // Security: ensure path stays within ROOT
-    if (!full.startsWith(ROOT + path.sep) && full !== ROOT) return {};
-    const text = fs.readFileSync(full, 'utf8');
-    const header = text.slice(0, 2000);
-    const result = {};
+function loadReportMeta(text) {
+  const result = {};
+  const urlM = reReportURL.exec(text);
+  if (urlM) result.jobURL = urlM[1];
 
-    const urlM = reReportURL.exec(header);
-    if (urlM) result.jobURL = urlM[1];
+  const archM = reArchetype.exec(text);
+  if (archM) result.archetype = cleanCell(archM[1]);
 
-    const archM = reArchetype.exec(text);
-    if (archM) result.archetype = cleanCell(archM[1]);
-
-    const tldrM = reTlDr.exec(text);
-    if (tldrM) {
-      let t = cleanCell(tldrM[1]);
-      if (t.length > 120) t = t.slice(0, 117) + '...';
-      result.tldr = t;
-    }
-
-    const remM = reRemote.exec(text);
-    if (remM) result.remote = cleanCell(remM[1]);
-
-    const compM = reComp.exec(text);
-    if (compM) result.comp = cleanCell(compM[1]);
-
-    return result;
-  } catch {
-    return {};
+  const tldrM = reTlDr.exec(text);
+  if (tldrM) {
+    let t = cleanCell(tldrM[1]);
+    if (t.length > 120) t = t.slice(0, 117) + '...';
+    result.tldr = t;
   }
+
+  const remM = reRemote.exec(text);
+  if (remM) result.remote = cleanCell(remM[1]);
+
+  const compM = reComp.exec(text);
+  if (compM) result.comp = cleanCell(compM[1]);
+
+  return result;
 }
 
-export function parseApplications() {
-  let filePath = path.join(ROOT, 'data', 'applications.md');
-  let content;
-  try {
-    content = fs.readFileSync(filePath, 'utf8');
-  } catch {
-    try {
-      filePath = path.join(ROOT, 'applications.md');
-      content = fs.readFileSync(filePath, 'utf8');
-    } catch {
-      return [];
-    }
-  }
-
+function parseContent(content) {
   const apps = [];
   let rowNum = 0;
 
@@ -129,12 +104,38 @@ export function parseApplications() {
       app.reportPath = repM[2];
     }
 
-    if (app.reportPath) {
-      const meta = loadReportMeta(app.reportPath);
-      Object.assign(app, meta);
-    }
-
     apps.push(app);
+  }
+
+  return apps;
+}
+
+/**
+ * Parse applications. readFileFn is async: (relativePath: string) => Promise<string>.
+ * Falls back to local filesystem if not provided.
+ */
+export async function parseApplications(readFileFn) {
+  const read = readFileFn ?? localReadFile;
+
+  let content;
+  try {
+    content = await read('data/applications.md');
+  } catch {
+    try {
+      content = await read('applications.md');
+    } catch {
+      return [];
+    }
+  }
+
+  const apps = parseContent(content);
+
+  for (const app of apps) {
+    if (!app.reportPath) continue;
+    try {
+      const reportText = await read(app.reportPath);
+      Object.assign(app, loadReportMeta(reportText));
+    } catch { /* report missing, skip */ }
   }
 
   return apps;
@@ -142,10 +143,7 @@ export function parseApplications() {
 
 export function computeStats(apps) {
   const byStatus = {};
-  let totalScore = 0;
-  let scored = 0;
-  let topScore = 0;
-  let withPDF = 0;
+  let totalScore = 0, scored = 0, topScore = 0, withPDF = 0;
 
   for (const app of apps) {
     byStatus[app.status] = (byStatus[app.status] || 0) + 1;
@@ -159,26 +157,29 @@ export function computeStats(apps) {
 
   const avgScore = scored > 0 ? +(totalScore / scored).toFixed(2) : 0;
 
-  // Funnel: ordered stages
   const funnelOrder = ['evaluated', 'applied', 'responded', 'interview', 'offer'];
   const funnel = funnelOrder.map(stage => ({ stage, count: byStatus[stage] || 0 }));
 
-  // Score buckets: [4.5-5, 4.0-4.4, 3.5-3.9, 3.0-3.4, <3.0]
   const buckets = [
     { label: '4.5–5.0', count: 0 },
     { label: '4.0–4.4', count: 0 },
     { label: '3.5–3.9', count: 0 },
     { label: '3.0–3.4', count: 0 },
-    { label: '<3.0', count: 0 },
+    { label: '<3.0',    count: 0 },
   ];
   for (const app of apps) {
     if (app.score <= 0) continue;
-    if (app.score >= 4.5) buckets[0].count++;
+    if (app.score >= 4.5)      buckets[0].count++;
     else if (app.score >= 4.0) buckets[1].count++;
     else if (app.score >= 3.5) buckets[2].count++;
     else if (app.score >= 3.0) buckets[3].count++;
-    else buckets[4].count++;
+    else                       buckets[4].count++;
   }
 
   return { total: apps.length, byStatus, avgScore, topScore, withPDF, funnel, buckets };
+}
+
+// Default local readFile used when no readFileFn is passed
+async function localReadFile(relPath) {
+  return fs.readFile(path.join(ROOT, relPath), 'utf8');
 }
