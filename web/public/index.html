@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>career-ops dashboard</title>
+  <link rel="stylesheet" href="style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
+</head>
+<body>
+  <header>
+    <div class="header-left">
+      <span class="logo">career-ops</span>
+      <span class="subtitle">dashboard</span>
+    </div>
+    <div class="header-right">
+      <span id="followup-badge" class="badge hidden"></span>
+      <button class="btn-refresh" id="btn-refresh" title="Refresh data">↻</button>
+    </div>
+  </header>
+
+  <main>
+    <!-- Stat cards -->
+    <section class="stat-cards">
+      <div class="card">
+        <div class="card-value" id="stat-total">—</div>
+        <div class="card-label">Total Evaluated</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="stat-applied">—</div>
+        <div class="card-label">Applied</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="stat-interview">—</div>
+        <div class="card-label">Interview</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="stat-offer">—</div>
+        <div class="card-label">Offers</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="stat-avg">—</div>
+        <div class="card-label">Avg Score</div>
+      </div>
+      <div class="card">
+        <div class="card-value" id="stat-pdf">—</div>
+        <div class="card-label">CVs Generated</div>
+      </div>
+    </section>
+
+    <!-- Charts -->
+    <section class="charts">
+      <div class="chart-box">
+        <h3>Pipeline Funnel</h3>
+        <canvas id="chart-funnel"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Score Distribution</h3>
+        <canvas id="chart-scores"></canvas>
+      </div>
+      <div class="chart-box">
+        <h3>Status Breakdown</h3>
+        <canvas id="chart-status"></canvas>
+      </div>
+    </section>
+
+    <!-- Table controls -->
+    <section class="table-controls">
+      <input type="text" id="search" placeholder="Search company or role…" autocomplete="off" />
+      <select id="filter-status">
+        <option value="">All statuses</option>
+        <option value="evaluated">Evaluated</option>
+        <option value="applied">Applied</option>
+        <option value="responded">Responded</option>
+        <option value="interview">Interview</option>
+        <option value="offer">Offer</option>
+        <option value="rejected">Rejected</option>
+        <option value="discarded">Discarded</option>
+        <option value="skip">Skip</option>
+      </select>
+      <select id="sort-by">
+        <option value="score-desc">Score ↓</option>
+        <option value="score-asc">Score ↑</option>
+        <option value="date-desc">Date ↓</option>
+        <option value="date-asc">Date ↑</option>
+        <option value="company-asc">Company A–Z</option>
+        <option value="status-asc">Status</option>
+      </select>
+      <span id="row-count" class="row-count"></span>
+    </section>
+
+    <!-- Applications table -->
+    <section class="table-wrap">
+      <table id="apps-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Date</th>
+            <th>Company</th>
+            <th>Role</th>
+            <th class="th-score">Score</th>
+            <th>Status</th>
+            <th>PDF</th>
+            <th>Archetype</th>
+            <th>TL;DR</th>
+          </tr>
+        </thead>
+        <tbody id="apps-tbody">
+          <tr><td colspan="9" class="loading">Loading…</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Report slide-in panel -->
+  <aside id="report-panel" class="report-panel hidden">
+    <div class="report-header">
+      <span id="report-title">Report</span>
+      <div class="report-header-actions">
+        <a id="report-link" href="#" target="_blank" rel="noopener" class="report-ext-link hidden" title="Open job URL">↗ Job</a>
+        <button id="report-close" title="Close (Esc)">✕</button>
+      </div>
+    </div>
+    <div id="report-body" class="report-body"></div>
+  </aside>
+  <div id="overlay" class="overlay hidden"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>
