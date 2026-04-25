@@ -3,10 +3,12 @@ import { config } from './config.mjs';
 
 // Model preference order: best quality first, free-tier fallbacks after.
 // Rate limits are conservative to avoid 429s.
+// Flash is preferred over Pro: faster (less thinking overhead), better for
+// structured JSON output, and well within Pro subscription limits.
 const MODEL_TIERS = [
-  { model: 'gemini-2.5-pro',   rateLimitMs: 1000,  label: 'Pro subscription'      },
-  { model: 'gemini-2.5-flash', rateLimitMs: 6000,  label: 'free tier (10 RPM)'    },
-  { model: 'gemini-2.0-flash', rateLimitMs: 4000,  label: 'free tier (15 RPM)'    },
+  { model: 'gemini-2.5-flash', rateLimitMs: 1000,  label: 'Pro subscription'      },
+  { model: 'gemini-2.0-flash', rateLimitMs: 1000,  label: 'Pro subscription'      },
+  { model: 'gemini-2.5-pro',   rateLimitMs: 2000,  label: 'Pro (fallback)'        },
 ];
 
 let _activeModel  = null;   // GenerativeModel instance

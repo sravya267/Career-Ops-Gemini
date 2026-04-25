@@ -267,9 +267,11 @@ export async function fetchAllJobs(companies = config.portals) {
   const companyFilter = makeCompanyFilter(config.companyBlocklist);
 
   // 1. Broad remote job platforms (no company list needed)
-  const jobicyJobs   = await fetchJobicy();
-  const wwrJobs      = await fetchWeWorkRemotely();
-  const remotiveJobs = await fetchRemotive();
+  const [jobicyJobs, wwrJobs, remotiveJobs] = await Promise.all([
+    fetchJobicy(),
+    fetchWeWorkRemotely(),
+    fetchRemotive(),
+  ]);
 
   console.log(`Before title filter — jobicy: ${jobicyJobs.length}, wwr: ${wwrJobs.length}, remotive: ${remotiveJobs.length}`);
   const platformJobs = [...jobicyJobs, ...wwrJobs, ...remotiveJobs]
