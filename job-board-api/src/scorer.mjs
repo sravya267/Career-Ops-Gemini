@@ -1,16 +1,66 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from './config.mjs';
 
-// Pro subscription — higher RPM limit, use 1s spacing to avoid bursts
-const RATE_LIMIT_MS = 1000;
-let lastCallAt = 0;
+// Model preference order: best quality first, free-tier fallbacks after.
+// Rate limits are conservative to avoid 429s.
+const MODEL_TIERS = [
+  { model: 'gemini-2.5-pro',   rateLimitMs: 1000,  label: 'Pro subscription'      },
+  { model: 'gemini-2.5-flash', rateLimitMs: 6000,  label: 'free tier (10 RPM)'    },
+  { model: 'gemini-2.0-flash', rateLimitMs: 4000,  label: 'free tier (15 RPM)'    },
+];
+
+let _activeModel  = null;   // GenerativeModel instance
+let _rateLimitMs  = 4000;
+let _lastCallAt   = 0;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
 async function throttle() {
-  const wait = RATE_LIMIT_MS - (Date.now() - lastCallAt);
+  const wait = _rateLimitMs - (Date.now() - _lastCallAt);
   if (wait > 0) await sleep(wait);
-  lastCallAt = Date.now();
+  _lastCallAt = Date.now();
+}
+
+// Probe each model tier once per container instance.
+// Respects GEMINI_MODEL env var as a hard override (skips probing).
+async function resolveModel() {
+  if (_activeModel) return _activeModel;
+  if (!config.geminiKey) throw new Error('GEMINI_API_KEY is not set');
+
+  const client = new GoogleGenerativeAI(config.geminiKey);
+  const genConfig = { temperature: 0.1, maxOutputTokens: 512 };
+
+  // Hard override via env var — trust the user, skip probing
+  if (process.env.GEMINI_MODEL) {
+    _rateLimitMs = 1000;
+    _activeModel = client.getGenerativeModel({ model: config.geminiModel, generationConfig: genConfig });
+    console.log(`Using model (env override): ${config.geminiModel}`);
+    return _activeModel;
+  }
+
+  // Auto-detect: probe each tier with a minimal call
+  for (const tier of MODEL_TIERS) {
+    try {
+      const m = client.getGenerativeModel({
+        model: tier.model,
+        generationConfig: { maxOutputTokens: 1 },
+      });
+      await m.generateContent('ping');
+      _rateLimitMs = tier.rateLimitMs;
+      _activeModel = client.getGenerativeModel({ model: tier.model, generationConfig: genConfig });
+      console.log(`Auto-selected model: ${tier.model} (${tier.label}, ${1000 / tier.rateLimitMs * 60} RPM)`);
+      return _activeModel;
+    } catch (err) {
+      const is404 = err.message?.includes('404') || err.message?.includes('not found');
+      const is403 = err.message?.includes('403') || err.message?.includes('permission');
+      if (is404 || is403) {
+        console.log(`  ${tier.model} unavailable (${err.message.slice(0, 60)}), trying next...`);
+        continue;
+      }
+      throw err; // unexpected error — bubble up
+    }
+  }
+  throw new Error('No working Gemini model found. Check your GEMINI_API_KEY.');
 }
 
 function buildPrompt(job) {
@@ -37,7 +87,7 @@ ${desc}
 
 Return valid JSON ONLY (no markdown fences, no explanation):
 {
-  "score": <integer 0-100, applying all 5 priorities above>,
+  "score": <integer 0-100, applying all priorities above>,
   "remote": <"yes"|"hybrid"|"no"|"unclear">,
   "wlb_signals": "<brief: any WLB signals found — flexible hours, async, 4-day week, unlimited PTO, etc. or 'none mentioned'>",
   "ai_proof": <true if role builds data/AI infrastructure that AI depends on; false if AI could replace this role>,
@@ -48,18 +98,6 @@ Return valid JSON ONLY (no markdown fences, no explanation):
 }`;
 }
 
-let _model;
-function getModel() {
-  if (!config.geminiKey) throw new Error('GEMINI_API_KEY is not set');
-  if (!_model) {
-    _model = new GoogleGenerativeAI(config.geminiKey).getGenerativeModel({
-      model: config.geminiModel,
-      generationConfig: { temperature: 0.1, maxOutputTokens: 512 },
-    });
-  }
-  return _model;
-}
-
 function parseResponse(text) {
   const clean = text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
   try {
@@ -67,7 +105,7 @@ function parseResponse(text) {
     return {
       score:            Math.min(100, Math.max(0, parseInt(parsed.score) || 0)),
       missing_skills:   (parsed.missing_skills || []).slice(0, 3).join(', '),
-      salary_mentioned: Boolean(parsed.salary_mentioned),
+      salary_mentioned: false,
       remote:           ['yes', 'hybrid', 'no', 'unclear'].includes(parsed.remote) ? parsed.remote : 'unclear',
       wlb_signals:      String(parsed.wlb_signals || 'none mentioned').slice(0, 200),
       ai_proof:         Boolean(parsed.ai_proof),
@@ -76,20 +114,25 @@ function parseResponse(text) {
       summary:          String(parsed.summary || '').slice(0, 200),
     };
   } catch {
-    return { score: -1, missing_skills: '', salary_mentioned: false, remote: 'unclear', seniority: 'unclear', summary: 'parse-error' };
+    return { score: -1, missing_skills: '', salary_mentioned: false, remote: 'unclear',
+             wlb_signals: 'none mentioned', ai_proof: false, stability: 'medium',
+             seniority: 'unclear', summary: 'parse-error' };
   }
 }
 
 export async function scoreJob(job) {
+  const model = await resolveModel();
   await throttle();
-  const result = await getModel().generateContent(buildPrompt(job));
+  const result = await model.generateContent(buildPrompt(job));
   return parseResponse(result.response.text());
 }
 
 export async function scoreBatch(jobs) {
   if (!jobs.length) return [];
 
-  console.log(`Scoring ${jobs.length} jobs with Gemini (${config.geminiModel})`);
+  // Resolve model once before the loop so the probe log appears upfront
+  await resolveModel();
+  console.log(`Scoring ${jobs.length} jobs...`);
   const scored = [];
 
   for (const job of jobs) {
