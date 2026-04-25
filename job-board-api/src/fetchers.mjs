@@ -209,24 +209,73 @@ async function parallelFetch(tasks, limit = 8) {
   return results.flat();
 }
 
-function makeTitleFilter(keywords) {
-  if (!keywords.length) return () => true;
-  return (title) => keywords.some(k => title.toLowerCase().includes(k));
+// ── Remotive — free remote jobs API ──────────────────────────────────────────
+// https://remotive.com/api/remote-jobs  (no auth required)
+
+const REMOTIVE_CATEGORIES = ['data', 'devops-sysadmin', 'software-dev'];
+
+export async function fetchRemotive() {
+  const seen = new Set();
+  const jobs = [];
+
+  for (const cat of REMOTIVE_CATEGORIES) {
+    try {
+      const data = await fetchJson(`https://remotive.com/api/remote-jobs?category=${cat}&limit=100`);
+      for (const j of (data.jobs || [])) {
+        const url = j.url || '';
+        if (!url || seen.has(url)) continue;
+        seen.add(url);
+        jobs.push({
+          id:          jobId(url),
+          url,
+          company:     j.company_name  || '',
+          title:       j.title         || '',
+          location:    'Remote',
+          description: stripHtml(j.description || '').slice(0, 4000),
+          source:      'remotive',
+          fetched_at:  now(),
+        });
+      }
+    } catch (err) {
+      console.error(`  remotive error (cat=${cat}): ${err.message}`);
+    }
+  }
+
+  console.log(`  remotive: ${jobs.length} jobs`);
+  return jobs;
+}
+
+function makeTitleFilter(include, exclude) {
+  const hasInclude = include.length > 0;
+  return (title) => {
+    const t = title.toLowerCase();
+    if (exclude.some(k => t.includes(k))) return false;
+    if (hasInclude && !include.some(k => t.includes(k))) return false;
+    return true;
+  };
+}
+
+function makeCompanyFilter(blocklist) {
+  if (!blocklist.length) return () => true;
+  return (company) => !blocklist.some(b => company.toLowerCase().includes(b));
 }
 
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export async function fetchAllJobs(companies = config.portals) {
-  const titleFilter = makeTitleFilter(config.titleKeywords);
+  const titleFilter   = makeTitleFilter(config.titleKeywords, config.titleExclude);
+  const companyFilter = makeCompanyFilter(config.companyBlocklist);
 
   // 1. Broad remote job platforms (no company list needed)
-  const [jobicyJobs, wwrJobs] = await Promise.all([
+  const [jobicyJobs, wwrJobs, remotiveJobs] = await Promise.all([
     fetchJobicy(),
     fetchWeWorkRemotely(),
+    fetchRemotive(),
   ]);
 
-  const platformJobs = [...jobicyJobs, ...wwrJobs].filter(j => titleFilter(j.title));
-  console.log(`Platform jobs matching title filter: ${platformJobs.length}`);
+  const platformJobs = [...jobicyJobs, ...wwrJobs, ...remotiveJobs]
+    .filter(j => titleFilter(j.title) && companyFilter(j.company));
+  console.log(`Platform jobs after filters: ${platformJobs.length}`);
 
   // 2. Specific company boards (Greenhouse / Lever / Ashby)
   const targets = companies
