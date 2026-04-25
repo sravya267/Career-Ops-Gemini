@@ -72,7 +72,6 @@ function getTopJobs() {
     'JOIN `' + CONFIG.bqProject + '.' + CONFIG.bqDataset + '.' + CONFIG.bqScoresTable + '` s',
     '  ON j.id = s.job_id',
     'WHERE s.score >= ' + CONFIG.minScore,
-    '  AND s.remote IN ("yes", "unclear")',  // filter out non-remote
     'ORDER BY s.score DESC',
     'LIMIT ' + CONFIG.maxJobs,
   ].join('\n');
@@ -121,19 +120,20 @@ function updateDashboard() {
     var cvLink  = existingCvLinks[key] || '';
     var missing = (job.missing_skills || '').split(',').slice(0, 3).join(', ');
     return [
-      i + 1,
-      parseInt(job.score) || 0,
-      job.company  || '',
-      job.title    || '',
-      job.location || '',
-      job.remote   || 'unclear',
-      job.seniority || 'unclear',
-      missing,
-      job.summary  || '',
-      job.url      || '',   // Apply link (col 10 = J)
-      cvLink,               // CV link    (col 11 = K)
-      'To Review',
-      now,
+      i + 1,                          // #
+      parseInt(job.score) || 0,       // Score
+      job.company       || '',        // Company
+      job.title         || '',        // Role
+      job.remote        || 'unclear', // Remote
+      job.wlb_signals   || '',        // WLB Signals
+      job.ai_proof ? 'yes' : 'no',   // AI-Proof
+      job.stability     || '',        // Stability
+      job.seniority     || 'unclear', // Seniority
+      missing,                        // Missing Skills
+      job.summary       || '',        // Summary
+      job.url           || '',        // Apply
+      cvLink,                         // CV
+      'To Review',                    // Status
     ];
   });
 
