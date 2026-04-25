@@ -39,8 +39,12 @@ function onOpen() {
 // ── BigQuery ──────────────────────────────────────────────────────────────────
 
 function queryBigQuery(sql) {
-  Logger.log('SQL: ' + sql);
-  var request = { query: sql, useLegacySql: false, timeoutMs: 60000 };
+  var request = {
+    query: sql,
+    useLegacySql: false,
+    timeoutMs: 60000,
+    defaultDataset: { projectId: CONFIG.bqProject, datasetId: CONFIG.bqDataset },
+  };
   var response = BigQuery.Jobs.query(CONFIG.bqProject, request);
 
   if (!response.jobComplete) {
@@ -65,17 +69,15 @@ function queryBigQuery(sql) {
 
 function getTopJobs() {
   var sql = [
-    'SELECT',
-    '  j.id, j.url, j.company, j.title, j.location,',
+    'SELECT j.id, j.url, j.company, j.title, j.location,',
     '  s.score, s.remote, s.wlb_signals, s.ai_proof, s.stability,',
     '  s.seniority, s.missing_skills, s.summary',
-    'FROM `' + CONFIG.bqProject + '.' + CONFIG.bqDataset + '.' + CONFIG.bqJobsTable + '` j',
-    'JOIN `' + CONFIG.bqProject + '.' + CONFIG.bqDataset + '.' + CONFIG.bqScoresTable + '` s',
-    '  ON j.id = s.job_id',
+    'FROM ' + CONFIG.bqJobsTable + ' j',
+    'JOIN ' + CONFIG.bqScoresTable + ' s ON j.id = s.job_id',
     'WHERE s.score >= ' + CONFIG.minScore,
     'ORDER BY s.score DESC',
     'LIMIT ' + CONFIG.maxJobs,
-  ].join('\n');
+  ].join(' ');
 
   return queryBigQuery(sql);
 }
