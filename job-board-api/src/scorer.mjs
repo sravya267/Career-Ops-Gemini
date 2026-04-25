@@ -135,7 +135,13 @@ export async function scoreJob(job) {
   const model = await resolveModel();
   await throttle();
   const result = await model.generateContent(buildPrompt(job));
-  return parseResponse(result.response.text());
+  // gemini-2.5-pro thinking model puts output in non-thought parts.
+  // Extract only non-thinking parts; fall back to response.text() for other models.
+  const parts = result.response.candidates?.[0]?.content?.parts || [];
+  const text = parts.length
+    ? parts.filter(p => !p.thought).map(p => p.text || '').join('')
+    : result.response.text();
+  return parseResponse(text);
 }
 
 export async function scoreBatch(jobs) {
