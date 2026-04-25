@@ -30,7 +30,11 @@ async function resolveModel() {
   if (!config.geminiKey) throw new Error('GEMINI_API_KEY is not set');
 
   const client = new GoogleGenerativeAI(config.geminiKey);
-  const genConfig = { temperature: 0.1, maxOutputTokens: 2048 };
+  const genConfig = {
+    temperature: 0.1,
+    maxOutputTokens: 8192,
+    responseMimeType: 'application/json',
+  };
 
   // Hard override via env var — trust the user, skip probing
   if (process.env.GEMINI_MODEL) {
@@ -87,7 +91,7 @@ Location: ${job.location || 'Not specified'}
 Description:
 ${desc}
 
-Return valid JSON ONLY (no markdown fences, no explanation):
+Return a JSON object with exactly these fields:
 {
   "score": <integer 0-100, applying all priorities above>,
   "remote": <"yes"|"hybrid"|"no"|"unclear">,
