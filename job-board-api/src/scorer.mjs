@@ -26,6 +26,7 @@ SCORING PRIORITIES (in order of importance):
 3. JOB SECURITY — prefer roles where the candidate BUILDS AI/data infrastructure (pipelines, platforms, governance) over roles that compete with AI. Stable companies (profitable, government, enterprise) score higher than high-risk startups.
 4. SKILLS MATCH — data engineering, cloud platforms (GCP/Azure/AWS), Python, PySpark, SQL, ML/AI, Airflow, Snowflake, Databricks.
 5. IC ROLE — individual contributor only. If the role is primarily managerial (hiring, performance reviews, org design), cap score at 40.
+6. REAL ESTATE / PROPTECH BONUS — candidate has deep real estate domain expertise (14+ years at JLL, a Fortune 500 commercial real estate firm). Add +10 to the score if the company operates in real estate, proptech, commercial real estate, property management, facilities, construction tech, or related sectors (e.g. CoStar, Yardi, RealPage, VTS, Procore, Cushman & Wakefield, CBRE, Colliers, Prologis, Zillow, Redfin, Opendoor, WeWork, Compass, Jones Lang LaSalle). This domain expertise is a rare differentiator.
 
 JOB POSTING:
 Company: ${job.company}
