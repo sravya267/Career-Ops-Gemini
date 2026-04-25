@@ -30,7 +30,7 @@ async function resolveModel() {
   if (!config.geminiKey) throw new Error('GEMINI_API_KEY is not set');
 
   const client = new GoogleGenerativeAI(config.geminiKey);
-  const genConfig = { temperature: 0.1, maxOutputTokens: 512 };
+  const genConfig = { temperature: 0.1, maxOutputTokens: 2048 };
 
   // Hard override via env var — trust the user, skip probing
   if (process.env.GEMINI_MODEL) {
