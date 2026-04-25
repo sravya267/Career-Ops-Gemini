@@ -1,8 +1,8 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from './config.mjs';
 
-// Free tier: gemini-2.0-flash → 15 RPM. We target 12 RPM to stay safe.
-const RATE_LIMIT_MS = 5000;
+// Pro subscription — higher RPM limit, use 1s spacing to avoid bursts
+const RATE_LIMIT_MS = 1000;
 let lastCallAt = 0;
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
