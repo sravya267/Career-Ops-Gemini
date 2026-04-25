@@ -99,9 +99,17 @@ Return valid JSON ONLY (no markdown fences, no explanation):
 }
 
 function parseResponse(text) {
-  const clean = text.replace(/^```(?:json)?\s*/, '').replace(/\s*```$/, '').trim();
+  // gemini-2.5-pro (thinking model) prepends reasoning before the JSON.
+  // Find the first complete {...} block anywhere in the response.
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (!jsonMatch) {
+    console.error(`  parse-error: no JSON found. Response: ${text.slice(0, 200)}`);
+    return { score: -1, missing_skills: '', salary_mentioned: false, remote: 'unclear',
+             wlb_signals: 'none mentioned', ai_proof: false, stability: 'medium',
+             seniority: 'unclear', summary: 'parse-error: no JSON in response' };
+  }
   try {
-    const parsed = JSON.parse(clean);
+    const parsed = JSON.parse(jsonMatch[0]);
     return {
       score:            Math.min(100, Math.max(0, parseInt(parsed.score) || 0)),
       missing_skills:   (parsed.missing_skills || []).slice(0, 3).join(', '),
@@ -113,10 +121,11 @@ function parseResponse(text) {
       seniority:        ['senior', 'mid', 'junior', 'unclear'].includes(parsed.seniority) ? parsed.seniority : 'unclear',
       summary:          String(parsed.summary || '').slice(0, 200),
     };
-  } catch {
+  } catch (e) {
+    console.error(`  parse-error: ${e.message}. Text: ${jsonMatch[0].slice(0, 200)}`);
     return { score: -1, missing_skills: '', salary_mentioned: false, remote: 'unclear',
              wlb_signals: 'none mentioned', ai_proof: false, stability: 'medium',
-             seniority: 'unclear', summary: 'parse-error' };
+             seniority: 'unclear', summary: 'parse-error: invalid JSON' };
   }
 }
 
