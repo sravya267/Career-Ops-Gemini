@@ -4,8 +4,6 @@
 # Usage:
 #   bash deploy.sh              # rebuild image + update Cloud Run
 #   bash deploy.sh --skip-build # update Cloud Run only (reuse current image)
-#
-# Requires setup-gcp.sh to have been run at least once.
 
 set -euo pipefail
 
@@ -17,13 +15,24 @@ err()  { echo -e "\033[0;31m✗\033[0m  $*"; exit 1; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ENV_FILE="$SCRIPT_DIR/.env"
 
-[[ -f "$ENV_FILE" ]] || err ".env not found — run setup-gcp.sh first"
+# Load .env if present; otherwise fall back to gcloud defaults
+if [[ -f "$ENV_FILE" ]]; then
+  while IFS= read -r line; do
+    [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+    export "$line" 2>/dev/null || true
+  done < "$ENV_FILE"
+  ok "Loaded .env"
+fi
 
-# Load config
-while IFS= read -r line; do
-  [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
-  export "$line" 2>/dev/null || true
-done < "$ENV_FILE"
+# Fill in any missing values from gcloud config
+PROJECT_ID="${PROJECT_ID:-$(gcloud config get-value project 2>/dev/null)}"
+REGION="${REGION:-us-central1}"
+SERVICE_NAME="${SERVICE_NAME:-career-ops-job-board}"
+REPO_NAME="${REPO_NAME:-career-ops}"
+
+[[ -z "$PROJECT_ID" ]] && err "Could not detect GCP project. Run: gcloud config set project YOUR_PROJECT_ID"
+
+ok "Project: $PROJECT_ID | Region: $REGION | Service: $SERVICE_NAME"
 
 SKIP_BUILD=false
 [[ "${1:-}" == "--skip-build" ]] && SKIP_BUILD=true
@@ -47,6 +56,9 @@ gcloud run services update "$SERVICE_NAME" \
   --region="$REGION" \
   --project="$PROJECT_ID" \
   --quiet
+
+SERVICE_URL=$(gcloud run services describe "$SERVICE_NAME" \
+  --region="$REGION" --project="$PROJECT_ID" --format='value(status.url)')
 
 ok "Deployed: $SERVICE_URL"
 echo ""
