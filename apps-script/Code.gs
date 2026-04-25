@@ -39,6 +39,7 @@ function onOpen() {
 // ── BigQuery ──────────────────────────────────────────────────────────────────
 
 function queryBigQuery(sql) {
+  Logger.log('SQL: ' + sql);
   var request = { query: sql, useLegacySql: false, timeoutMs: 60000 };
   var response = BigQuery.Jobs.query(CONFIG.bqProject, request);
 
