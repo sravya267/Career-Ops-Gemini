@@ -273,6 +273,7 @@ export async function fetchAllJobs(companies = config.portals) {
     fetchRemotive(),
   ]);
 
+  console.log(`Before title filter — jobicy: ${jobicyJobs.length}, wwr: ${wwrJobs.length}, remotive: ${remotiveJobs.length}`);
   const platformJobs = [...jobicyJobs, ...wwrJobs, ...remotiveJobs]
     .filter(j => titleFilter(j.title) && companyFilter(j.company));
   console.log(`Platform jobs after filters: ${platformJobs.length}`);
