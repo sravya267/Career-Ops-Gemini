@@ -3,7 +3,7 @@ import { readFileSync, existsSync } from 'fs';
 export const config = {
   port:             parseInt(process.env.PORT            || '8080'),
   geminiKey:        process.env.GEMINI_API_KEY           || '',
-  geminiModel:      process.env.GEMINI_MODEL             || 'gemini-1.5-flash',
+  geminiModel:      process.env.GEMINI_MODEL             || 'gemini-2.5-flash',
   bqProject:        process.env.BQ_PROJECT               || '',
   bqDataset:        process.env.BQ_DATASET               || 'career_ops',
   bqJobsTable:      process.env.BQ_JOBS_TABLE            || 'jobs',
