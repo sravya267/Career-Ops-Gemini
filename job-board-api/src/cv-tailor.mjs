@@ -25,7 +25,7 @@ function buildPrompt(job, score, cvData) {
     || `Title: ${job.title}. Company: ${job.company}. Location: ${job.location || 'Remote'}.`;
 
   return `You are tailoring a CV for a job application. Be concise and precise.
-CANDIDATE: Sravya Thoomu — data/analytics professional
+CANDIDATE: Sravya Thoomu — 14yr senior data/analytics professional
 CANDIDATE BASE SUMMARY: ${cvData.base_summary}
 JOB: ${job.title} at ${job.company}
 REMOTE: ${score.remote || 'unclear'} | SENIORITY: ${score.seniority || 'senior'} | SCORE: ${score.score}/100
@@ -43,9 +43,9 @@ Return JSON with exactly these fields:
   
   "bullet_indices": [Select 7-10 bullet numbers. Prioritize: (1) bullets with quantified results (%, $, time saved); (2) exact tech matches (if JD says 'Snowflake', prioritize that over generic 'data warehouse'); (3) complexity signals (cross-functional, large-scale datasets, production systems); (4) domain overlap (fintech bullets for fintech jobs, SaaS for SaaS). Order by relevance to THIS job's core pain points. Reject bullets that are too junior, vague, or don't differentiate.],
   
-  "ats_keywords": [List 12-16 keywords/phrases from the JD that match candidate skills. Prioritize in this order: (1) tools/languages (Python, SQL, Tableau, Snowflake, BigQuery, dbt, Looker, Power BI, AWS, GCP, Azure); (2) methodologies (A/B testing, experimentation, statistical modeling, data governance, ETL, ELT); (3) domain terms (cohort analysis, churn prediction, attribution modeling, RFM segmentation, funnel analysis); (4) seniority signals (lead, architect, mentorship, strategy, roadmap). Include exact phrases from JD where possible (e.g., if JD says 'build data pipelines at scale', use that exact phrase). Exclude vague terms (strong, strategic, analytical) unless they appear 3+ times in the JD. Return only keywords the candidate genuinely has evidence for in the CV bullets.],
-  
-  "rewritten_bullets": [For each selected bullet_index, rewrite it to incorporate 2-3 exact phrases or keywords from the JD while preserving the original impact metrics. Example: Original: 'Built ELT pipeline processing 500M rows daily'. Rewritten for 'data infrastructure' JD: 'Architected dbt-based ELT infrastructure processing 500M rows daily, enabling 40% faster analytics queries'. Keep the metric, add JD terminology, stay under 1 line (≤150 chars).]
+  "ats_keywords": ["12-16 keyword strings. Priority order: (1) tools/languages exact from JD (Python, SQL, Snowflake, BigQuery, dbt, Looker, Power BI, AWS, GCP, Azure, Airflow, Spark); (2) methodologies (A/B testing, statistical modeling, data governance, ETL, ELT, data pipelines); (3) domain terms (cohort analysis, churn prediction, attribution modeling, funnel analysis); (4) seniority signals (lead, architect, mentorship, strategy, roadmap). Use exact JD phrases where possible. Exclude vague terms unless repeated 3+ times. Only include what the candidate genuinely evidences."],
+
+  "rewritten_bullets": ["One string per bullet_index. Rewrite each to weave in 2-3 exact JD phrases while keeping the original metric. Example — original: 'Built ELT pipeline processing 500M rows daily'. Rewritten for data infrastructure JD: 'Architected dbt-based ELT infrastructure processing 500M rows daily, enabling 40% faster analytics queries'. Rules: keep the metric, add JD terminology, max 150 chars, no fabrication."]
 }`;
 }
 
@@ -57,7 +57,7 @@ export async function tailorCV(job, score) {
     const client = new GoogleGenerativeAI(config.geminiKey);
     const model  = client.getGenerativeModel({
       model: config.geminiModel || 'gemini-2.5-flash',
-      generationConfig: { temperature: 0.15, maxOutputTokens: 1024, responseMimeType: 'application/json' },
+      generationConfig: { temperature: 0.15, maxOutputTokens: 2048, responseMimeType: 'application/json' },
     });
 
     const result = await model.generateContent(buildPrompt(job, score, cvData));
