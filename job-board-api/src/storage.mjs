@@ -120,7 +120,7 @@ export async function getTopJobs(minScore = 60, limit = 100) {
 export async function getJobsPendingCV(minScore = 65, limit = 50) {
   const [rows] = await bq().query({
     query: `
-      SELECT j.id, j.url, j.company, j.title, j.location,
+      SELECT j.id, j.url, j.company, j.title, j.location, j.description,
              s.score, s.remote, s.seniority, s.missing_skills, s.summary
       FROM \`${config.bqProject}.${config.bqDataset}.${config.bqJobsTable}\` j
       JOIN \`${config.bqProject}.${config.bqDataset}.${config.bqScoresTable}\` s
