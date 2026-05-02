@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { createServer } from 'http';
 import { config }       from './config.mjs';
 import { runPipeline }  from './pipeline.mjs';
-import { getTopJobs, getJobsPendingCV, insertCVs } from './storage.mjs';
+import { getTopJobs, getJobsPendingCV, insertCVs, ensureSchema } from './storage.mjs';
 import { generateCVBatch }                         from './cv-generator.mjs';
 
 const CORS_HEADERS = {
@@ -50,6 +50,7 @@ const server = createServer(async (req, res) => {
 
   if (url === '/generate-cvs' && method === 'POST') {
     try {
+      await ensureSchema();
       const pending = await getJobsPendingCV(config.cvMinScore);
       if (!pending.length) { json(res, 200, { status: 'ok', cvs: 0, message: 'no pending jobs' }); return; }
       const cvs = await generateCVBatch(pending, pending);
