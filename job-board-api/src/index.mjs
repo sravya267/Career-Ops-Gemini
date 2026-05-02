@@ -53,7 +53,7 @@ const server = createServer(async (req, res) => {
       await ensureSchema();
       const pending = await getJobsPendingCV(config.cvMinScore);
       if (!pending.length) { json(res, 200, { status: 'ok', cvs: 0, message: 'no pending jobs' }); return; }
-      const cvs = await generateCVBatch(pending, pending);
+      const cvs = await generateCVBatch(pending, pending.map(j => ({ job_id: j.id, ...j })));
       if (cvs.length) await insertCVs(cvs);
       json(res, 200, { status: 'ok', cvs: cvs.length });
     } catch (err) {
