@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Career Ops — Job Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg:      #0f1117;
+    --surface: #1a1d27;
+    --border:  #2a2d3a;
+    --accent:  #6c8ebf;
+    --green:   #4caf82;
+    --yellow:  #e6a817;
+    --red:     #e05c5c;
+    --text:    #d4d8e8;
+    --muted:   #6b7280;
+    --pill-bg: #252838;
+  }
+  body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text);
+         min-height: 100vh; font-size: 14px; }
+
+  /* ── Header ── */
+  header { background: var(--surface); border-bottom: 1px solid var(--border);
+           padding: 14px 24px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
+  header h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: #fff; flex: 1; }
+  header h1 span { color: var(--accent); }
+
+  .controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .controls label { color: var(--muted); font-size: 12px; }
+  select, input[type=range] { background: var(--pill-bg); border: 1px solid var(--border);
+    color: var(--text); border-radius: 6px; padding: 5px 10px; font-size: 13px; cursor: pointer; }
+  select:focus { outline: 2px solid var(--accent); }
+  input[type=range] { padding: 0; width: 100px; accent-color: var(--accent); }
+  #minScoreVal { font-size: 12px; color: var(--accent); min-width: 28px; }
+
+  .btn { padding: 6px 14px; border-radius: 6px; border: none; cursor: pointer;
+         font-size: 13px; font-weight: 600; transition: opacity .15s; }
+  .btn:hover { opacity: .85; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-run     { background: var(--green); color: #fff; }
+  .btn-cv      { background: var(--yellow); color: #111; }
+  .btn:disabled { opacity: .4; cursor: default; }
+
+  /* ── Stats bar ── */
+  #stats { display: flex; gap: 16px; padding: 12px 24px; background: var(--surface);
+           border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
+  .stat-val { font-size: 22px; font-weight: 700; line-height: 1; }
+  .stat-lbl { font-size: 11px; color: var(--muted); margin-top: 2px; text-transform: uppercase; letter-spacing: .04em; }
+
+  /* ── Filters ── */
+  #filters { padding: 10px 24px; display: flex; gap: 8px; flex-wrap: wrap;
+             border-bottom: 1px solid var(--border); background: var(--bg); }
+  .pill { padding: 4px 12px; border-radius: 20px; border: 1px solid var(--border);
+          background: var(--pill-bg); color: var(--muted); font-size: 12px; cursor: pointer;
+          transition: all .15s; user-select: none; }
+  .pill:hover { border-color: var(--accent); color: var(--text); }
+  .pill.active { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  #searchBox { flex: 1; min-width: 160px; max-width: 300px; background: var(--pill-bg);
+               border: 1px solid var(--border); color: var(--text); border-radius: 20px;
+               padding: 4px 14px; font-size: 12px; }
+  #searchBox:focus { outline: 2px solid var(--accent); }
+  #searchBox::placeholder { color: var(--muted); }
+
+  /* ── Table ── */
+  #tableWrap { overflow-x: auto; padding: 16px 24px 40px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .06em;
+       color: var(--muted); padding: 8px 12px; border-bottom: 1px solid var(--border);
+       white-space: nowrap; cursor: pointer; user-select: none; }
+  th:hover { color: var(--text); }
+  th.sorted { color: var(--accent); }
+  th.sorted::after { content: ' ↓'; }
+  th.sorted.asc::after { content: ' ↑'; }
+  td { padding: 10px 12px; border-bottom: 1px solid #1e2130; vertical-align: top; }
+  tr:hover td { background: var(--surface); }
+  tr:last-child td { border-bottom: none; }
+
+  .score-badge { display: inline-block; padding: 2px 8px; border-radius: 4px;
+                 font-weight: 700; font-size: 13px; }
+  .score-hi  { background: #1a3a2a; color: var(--green); }
+  .score-mid { background: #2d2a14; color: var(--yellow); }
+  .score-lo  { background: #2e1a1a; color: var(--red); }
+
+  .tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px;
+         background: var(--pill-bg); color: var(--muted); margin: 1px; }
+  .tag-remote { color: var(--green); background: #1a3a2a; }
+  .tag-hybrid { color: var(--yellow); background: #2d2a14; }
+
+  a.job-link { color: var(--accent); text-decoration: none; font-weight: 500; }
+  a.job-link:hover { text-decoration: underline; }
+  a.cv-link  { color: var(--green); font-size: 12px; text-decoration: none; }
+  a.cv-link:hover { text-decoration: underline; }
+
+  .company-name { font-weight: 600; color: #fff; }
+  .missing { font-size: 11px; color: var(--muted); max-width: 200px; line-height: 1.4; }
+
+  /* ── Toast ── */
+  #toast { position: fixed; bottom: 24px; right: 24px; padding: 10px 18px; border-radius: 8px;
+           background: var(--surface); border: 1px solid var(--border); color: var(--text);
+           font-size: 13px; opacity: 0; pointer-events: none; transition: opacity .3s;
+           max-width: 320px; z-index: 999; }
+  #toast.show { opacity: 1; }
+  #toast.ok   { border-color: var(--green); }
+  #toast.err  { border-color: var(--red); }
+
+  /* ── Empty / loading ── */
+  #status { padding: 60px 24px; text-align: center; color: var(--muted); display: none; }
+  .spinner { display: inline-block; width: 24px; height: 24px; border: 3px solid var(--border);
+             border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Career <span>Ops</span></h1>
+
+  <div class="controls">
+    <label>Min score</label>
+    <input type="range" id="minScore" min="40" max="95" value="60" step="5">
+    <span id="minScoreVal">60</span>
+
+    <select id="sortBy">
+      <option value="score">Sort: Score</option>
+      <option value="company">Sort: Company</option>
+      <option value="seniority">Sort: Seniority</option>
+      <option value="scored_at">Sort: Date</option>
+    </select>
+
+    <button class="btn btn-primary" id="btnRefresh">Refresh</button>
+    <button class="btn btn-run"     id="btnRun">▶ Run Pipeline</button>
+    <button class="btn btn-cv"      id="btnCVs">⚡ Gen CVs</button>
+  </div>
+</header>
+
+<div id="stats">
+  <div class="stat"><span class="stat-val" id="sTotal">–</span><span class="stat-lbl">Total</span></div>
+  <div class="stat"><span class="stat-val" id="sTop">–</span><span class="stat-lbl">Score ≥ 80</span></div>
+  <div class="stat"><span class="stat-val" id="sRemote">–</span><span class="stat-lbl">Remote</span></div>
+  <div class="stat"><span class="stat-val" id="sCVs">–</span><span class="stat-lbl">CVs ready</span></div>
+  <div class="stat"><span class="stat-val" id="sAvg">–</span><span class="stat-lbl">Avg score</span></div>
+</div>
+
+<div id="filters">
+  <input type="text" id="searchBox" placeholder="Search company or title…">
+  <span class="pill active" data-remote="all">All</span>
+  <span class="pill" data-remote="yes">Remote</span>
+  <span class="pill" data-remote="hybrid">Hybrid</span>
+  <span class="pill" data-remote="no">Onsite</span>
+</div>
+
+<div id="status"><div class="spinner"></div></div>
+
+<div id="tableWrap">
+  <table>
+    <thead>
+      <tr>
+        <th data-col="score" class="sorted">Score</th>
+        <th data-col="company">Company</th>
+        <th data-col="title">Title</th>
+        <th data-col="remote">Remote</th>
+        <th data-col="seniority">Level</th>
+        <th data-col="missing_skills">Gaps</th>
+        <th>CV</th>
+        <th>Apply</th>
+      </tr>
+    </thead>
+    <tbody id="tbody"></tbody>
+  </table>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── Config — set to your Cloud Run URL ───────────────────────────────────────
+  const API = '';   // empty = same origin (served from Cloud Run)
+
+  // ── State ───────────────────────────────────────────────────────────────────
+  let allJobs = [];
+  let sortCol = 'score';
+  let sortAsc = false;
+  let remoteFilter = 'all';
+
+  // ── Elements ─────────────────────────────────────────────────────────────────
+  const tbody   = document.getElementById('tbody');
+  const status  = document.getElementById('status');
+  const toast   = document.getElementById('toast');
+  const search  = document.getElementById('searchBox');
+  const minSlider = document.getElementById('minScore');
+  const minVal    = document.getElementById('minScoreVal');
+
+  // ── Toast ────────────────────────────────────────────────────────────────────
+  let toastTimer;
+  function showToast(msg, type = 'ok') {
+    toast.textContent = msg;
+    toast.className = `show ${type}`;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.className = '', 4000);
+  }
+
+  // ── Fetch jobs ────────────────────────────────────────────────────────────────
+  async function loadJobs() {
+    const minScore = minSlider.value;
+    status.style.display = 'block';
+    tbody.innerHTML = '';
+    try {
+      const res = await fetch(`${API}/jobs?min_score=${minScore}&limit=500`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      allJobs = await res.json();
+      renderTable();
+    } catch (err) {
+      showToast(`Load failed: ${err.message}`, 'err');
+    } finally {
+      status.style.display = 'none';
+    }
+  }
+
+  // ── Render ────────────────────────────────────────────────────────────────────
+  function renderTable() {
+    const q = search.value.toLowerCase();
+    let rows = allJobs.filter(j => {
+      if (remoteFilter !== 'all') {
+        const r = (j.remote || '').toLowerCase();
+        if (remoteFilter === 'yes'    && !r.includes('yes') && !r.includes('remote')) return false;
+        if (remoteFilter === 'hybrid' && !r.includes('hybrid')) return false;
+        if (remoteFilter === 'no'     && (r.includes('yes') || r.includes('remote') || r.includes('hybrid'))) return false;
+      }
+      if (q) {
+        const hay = `${j.company} ${j.title} ${j.seniority || ''} ${j.location || ''}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    rows.sort((a, b) => {
+      let va = a[sortCol] ?? '';
+      let vb = b[sortCol] ?? '';
+      if (sortCol === 'score') { va = +va; vb = +vb; }
+      const cmp = va < vb ? -1 : va > vb ? 1 : 0;
+      return sortAsc ? cmp : -cmp;
+    });
+
+    // Stats
+    document.getElementById('sTotal').textContent  = rows.length;
+    document.getElementById('sTop').textContent    = rows.filter(j => j.score >= 80).length;
+    document.getElementById('sRemote').textContent = rows.filter(j => (j.remote||'').toLowerCase().includes('yes')||
+                                                                       (j.remote||'').toLowerCase().includes('remote')).length;
+    document.getElementById('sCVs').textContent    = rows.filter(j => j.cv_url).length;
+    const avg = rows.length ? Math.round(rows.reduce((s,j) => s + (+j.score||0), 0) / rows.length) : 0;
+    document.getElementById('sAvg').textContent   = avg || '–';
+
+    tbody.innerHTML = rows.map(j => {
+      const sc = +j.score || 0;
+      const scoreClass = sc >= 80 ? 'score-hi' : sc >= 65 ? 'score-mid' : 'score-lo';
+      const remLower   = (j.remote || '').toLowerCase();
+      const remClass   = remLower.includes('yes') || remLower.includes('remote') ? 'tag-remote'
+                       : remLower.includes('hybrid') ? 'tag-hybrid' : '';
+      const remLabel   = j.remote || '–';
+      const level      = j.seniority || '–';
+      const gaps       = (j.missing_skills || '')
+        .split(',').map(s => s.trim()).filter(Boolean).slice(0, 4)
+        .map(s => `<span class="tag">${esc(s)}</span>`).join(' ');
+      const cvCell     = j.cv_url
+        ? `<a class="cv-link" href="${esc(j.cv_url)}" target="_blank" rel="noopener">📄 CV</a>`
+        : '<span style="color:var(--muted);font-size:12px">–</span>';
+      const date = j.scored_at ? new Date(j.scored_at.value||j.scored_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+
+      return `<tr>
+        <td><span class="score-badge ${scoreClass}">${sc}</span>${date ? `<br><span style="font-size:10px;color:var(--muted)">${date}</span>` : ''}</td>
+        <td><span class="company-name">${esc(j.company||'')}</span></td>
+        <td><a class="job-link" href="${esc(j.url)}" target="_blank" rel="noopener">${esc(j.title||'')}</a></td>
+        <td><span class="tag ${remClass}">${esc(remLabel)}</span></td>
+        <td><span class="tag">${esc(level)}</span></td>
+        <td class="missing">${gaps || '<span style="color:var(--muted)">–</span>'}</td>
+        <td>${cvCell}</td>
+        <td><a class="job-link" href="${esc(j.url)}" target="_blank" rel="noopener">Apply ↗</a></td>
+      </tr>`;
+    }).join('');
+  }
+
+  function esc(s) {
+    return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ── Sort ──────────────────────────────────────────────────────────────────────
+  document.querySelectorAll('th[data-col]').forEach(th => {
+    th.addEventListener('click', () => {
+      const col = th.dataset.col;
+      if (sortCol === col) { sortAsc = !sortAsc; }
+      else { sortCol = col; sortAsc = false; }
+      document.querySelectorAll('th').forEach(t => t.classList.remove('sorted','asc'));
+      th.classList.add('sorted');
+      if (sortAsc) th.classList.add('asc');
+      renderTable();
+    });
+  });
+
+  // ── Filters ───────────────────────────────────────────────────────────────────
+  document.querySelectorAll('.pill[data-remote]').forEach(p => {
+    p.addEventListener('click', () => {
+      document.querySelectorAll('.pill[data-remote]').forEach(x => x.classList.remove('active'));
+      p.classList.add('active');
+      remoteFilter = p.dataset.remote;
+      renderTable();
+    });
+  });
+
+  search.addEventListener('input', renderTable);
+
+  minSlider.addEventListener('input', () => {
+    minVal.textContent = minSlider.value;
+    document.getElementById('sortBy').value = 'score';
+    loadJobs();
+  });
+
+  document.getElementById('sortBy').addEventListener('change', e => {
+    sortCol = e.target.value;
+    sortAsc = false;
+    document.querySelectorAll('th').forEach(t => t.classList.remove('sorted','asc'));
+    const th = document.querySelector(`th[data-col="${sortCol}"]`);
+    if (th) th.classList.add('sorted');
+    renderTable();
+  });
+
+  // ── Refresh ───────────────────────────────────────────────────────────────────
+  document.getElementById('btnRefresh').addEventListener('click', loadJobs);
+
+  // ── Run pipeline ─────────────────────────────────────────────────────────────
+  document.getElementById('btnRun').addEventListener('click', async () => {
+    const btn = document.getElementById('btnRun');
+    btn.disabled = true;
+    btn.textContent = '⏳ Running…';
+    showToast('Pipeline started — this may take 5–10 min', 'ok');
+    try {
+      const res = await fetch(`${API}/run`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Done! +${data.inserted||0} jobs, ${data.scored||0} scored, ${data.cvs||0} CVs`, 'ok');
+        loadJobs();
+      } else {
+        showToast(`Error: ${data.error || res.status}`, 'err');
+      }
+    } catch (err) {
+      showToast(`Pipeline error: ${err.message}`, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '▶ Run Pipeline';
+    }
+  });
+
+  // ── Generate CVs ──────────────────────────────────────────────────────────────
+  document.getElementById('btnCVs').addEventListener('click', async () => {
+    const btn = document.getElementById('btnCVs');
+    btn.disabled = true;
+    btn.textContent = '⏳ Generating…';
+    try {
+      const res  = await fetch(`${API}/generate-cvs`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(`Generated ${data.cvs} CVs`, 'ok');
+        loadJobs();
+      } else {
+        showToast(`Error: ${data.error || res.status}`, 'err');
+      }
+    } catch (err) {
+      showToast(`CV error: ${err.message}`, 'err');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '⚡ Gen CVs';
+    }
+  });
+
+  // ── Init ──────────────────────────────────────────────────────────────────────
+  loadJobs();
+</script>
+</body>
+</html>

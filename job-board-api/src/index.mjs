@@ -1,9 +1,15 @@
 import 'dotenv/config';
-import { createServer } from 'http';
-import { config }       from './config.mjs';
-import { runPipeline }  from './pipeline.mjs';
+import { createServer }  from 'http';
+import { readFileSync }  from 'fs';
+import { fileURLToPath } from 'url';
+import { join, dirname } from 'path';
+import { config }        from './config.mjs';
+import { runPipeline }   from './pipeline.mjs';
 import { getTopJobs, getJobsPendingCV, insertCVs, ensureSchema } from './storage.mjs';
-import { generateCVBatch }                         from './cv-generator.mjs';
+import { generateCVBatch } from './cv-generator.mjs';
+
+const __dir     = dirname(fileURLToPath(import.meta.url));
+const DASHBOARD = readFileSync(join(__dir, 'dashboard.html'), 'utf-8');
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
@@ -26,6 +32,12 @@ const server = createServer(async (req, res) => {
   if (method === 'OPTIONS') {
     res.writeHead(204, CORS_HEADERS);
     res.end();
+    return;
+  }
+
+  if ((url === '/' || url === '') && method === 'GET') {
+    res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+    res.end(DASHBOARD);
     return;
   }
 
