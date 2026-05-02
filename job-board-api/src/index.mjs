@@ -2,6 +2,18 @@ import 'dotenv/config';
 import { createServer } from 'http';
 import { config }       from './config.mjs';
 import { runPipeline }  from './pipeline.mjs';
+import { getTopJobs }   from './storage.mjs';
+
+const CORS_HEADERS = {
+  'Access-Control-Allow-Origin':  '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+function json(res, status, body) {
+  res.writeHead(status, { 'Content-Type': 'application/json', ...CORS_HEADERS });
+  res.end(JSON.stringify(body));
+}
 
 // Track whether a pipeline run is in progress to prevent overlapping runs.
 let running = false;
@@ -9,21 +21,39 @@ let running = false;
 const server = createServer(async (req, res) => {
   const { method, url } = req;
 
+  // CORS preflight
+  if (method === 'OPTIONS') {
+    res.writeHead(204, CORS_HEADERS);
+    res.end();
+    return;
+  }
+
   if (url === '/health' && method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', ts: new Date().toISOString() }));
+    json(res, 200, { status: 'ok', ts: new Date().toISOString() });
+    return;
+  }
+
+  if (url?.startsWith('/jobs') && method === 'GET') {
+    const params  = new URL(url, 'http://localhost').searchParams;
+    const minScore = parseInt(params.get('min_score') || '60', 10);
+    const limit    = Math.min(parseInt(params.get('limit')     || '200', 10), 500);
+    try {
+      const jobs = await getTopJobs(minScore, limit);
+      json(res, 200, jobs);
+    } catch (err) {
+      console.error('[server] /jobs error:', err.message);
+      json(res, 500, { error: err.message });
+    }
     return;
   }
 
   if (url === '/run' && method === 'POST') {
     if (running) {
-      res.writeHead(409, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ status: 'busy', message: 'pipeline already running' }));
+      json(res, 409, { status: 'busy', message: 'pipeline already running' });
       return;
     }
 
-    res.writeHead(202, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'started', ts: new Date().toISOString() }));
+    json(res, 202, { status: 'started', ts: new Date().toISOString() });
 
     running = true;
     runPipeline()
@@ -33,8 +63,7 @@ const server = createServer(async (req, res) => {
     return;
   }
 
-  res.writeHead(404, { 'Content-Type': 'application/json' });
-  res.end(JSON.stringify({ error: 'not found' }));
+  json(res, 404, { error: 'not found' });
 });
 
 server.listen(config.port, () =>
