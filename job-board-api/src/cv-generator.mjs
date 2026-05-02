@@ -23,8 +23,7 @@ function fillTemplate(html, job, score) {
     .replace(/\{\{SENIORITY\}\}/g,    score.seniority || '')
     .replace(/\{\{SCORE\}\}/g,        String(score.score ?? ''))
     .replace(/\{\{MISSING\}\}/g,      score.missing_skills
-      ? `Skills to address: ${score.missing_skills}` : '')
-    .replace(/\{\{SUMMARY_TEXT\}\}/g, score.summary || '');
+      ? `Skills to address: ${score.missing_skills}` : '');
 }
 
 export async function generateCV(job, score) {
