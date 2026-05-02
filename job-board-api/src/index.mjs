@@ -69,13 +69,16 @@ const server = createServer(async (req, res) => {
       return;
     }
 
-    json(res, 202, { status: 'started', ts: new Date().toISOString() });
-
     running = true;
-    runPipeline()
-      .then(r  => console.log('[server] pipeline complete:', JSON.stringify(r)))
-      .catch(e => console.error('[server] pipeline error:', e.message))
-      .finally(() => { running = false; });
+    try {
+      const result = await runPipeline();
+      json(res, 200, { status: 'done', ...result });
+    } catch (err) {
+      console.error('[server] pipeline error:', err.message);
+      json(res, 500, { error: err.message });
+    } finally {
+      running = false;
+    }
     return;
   }
 
