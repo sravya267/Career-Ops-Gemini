@@ -24,11 +24,12 @@
   {"name": "Leidos",        "careers_url": "https://boards.greenhouse.io/leidos",           "note": "remote options, defense/gov data, very stable"},
   {"name": "MITRE",         "careers_url": "https://boards.greenhouse.io/mitre",            "note": "nonprofit, government research, excellent WLB"},
 
-  {"name": "CoStar Group",       "careers_url": "https://boards.greenhouse.io/costargroup",       "note": "real estate data platform, stable, JLL-adjacent domain"},
-  {"name": "Yardi Systems",      "careers_url": "https://boards.greenhouse.io/yardi",             "note": "property management software, very stable, real estate tech"},
-  {"name": "RealPage",           "careers_url": "https://boards.greenhouse.io/realpage",          "note": "real estate SaaS, stable, domain match"},
-  {"name": "Procore",            "careers_url": "https://boards.greenhouse.io/procore",           "note": "construction tech, real estate adjacent, remote options"},
-  {"name": "Cushman & Wakefield","careers_url": "https://boards.greenhouse.io/cushmanwakefield",  "note": "commercial real estate, direct JLL competitor, domain match"},
-  {"name": "CBRE",               "careers_url": "https://boards.greenhouse.io/cbre",              "note": "commercial real estate, JLL-adjacent domain, large data team"},
-  {"name": "Prologis",           "careers_url": "https://boards.greenhouse.io/prologis",          "note": "largest industrial REIT, data-driven, real estate domain"}
+  {"name": "Yardi Systems",      "careers_url": "https://jobs.ashbyhq.com/yardi",              "note": "property management software, very stable, real estate tech — Ashby"},
+  {"name": "Redfin",             "careers_url": "https://boards.greenhouse.io/redfin",            "note": "real estate tech, data-driven, remote-friendly"},
+  {"name": "Opendoor",           "careers_url": "https://jobs.ashbyhq.com/opendoor",              "note": "iBuyer proptech, heavy data/ML, remote roles"},
+  {"name": "Compass",            "careers_url": "https://boards.greenhouse.io/compass",           "note": "real estate brokerage platform, large data team"},
+  {"name": "AppFolio",           "careers_url": "https://boards.greenhouse.io/appfolio",          "note": "property management SaaS, remote options, real estate tech"},
+  {"name": "MRI Software",       "careers_url": "https://jobs.ashbyhq.com/mrisoftware",           "note": "real estate software, global, domain match to JLL"},
+  {"name": "HouseCanary",        "careers_url": "https://jobs.ashbyhq.com/housecanary",           "note": "real estate AVM and analytics, data-heavy"},
+  {"name": "Cherre",             "careers_url": "https://jobs.ashbyhq.com/cherre",                "note": "real estate data platform, analytics-first"}
 ]
