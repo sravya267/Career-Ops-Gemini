@@ -36,6 +36,12 @@ const SCORES_SCHEMA = [
   { name: 'scored_at',        type: 'TIMESTAMP' },
 ];
 
+const CVS_SCHEMA = [
+  { name: 'job_id',       type: 'STRING',    mode: 'REQUIRED' },
+  { name: 'cv_url',       type: 'STRING' },
+  { name: 'generated_at', type: 'TIMESTAMP' },
+];
+
 // ── Setup ─────────────────────────────────────────────────────────────────────
 
 export async function ensureSchema() {
@@ -46,6 +52,7 @@ export async function ensureSchema() {
   }
   await ensureTable(config.bqJobsTable,   JOBS_SCHEMA);
   await ensureTable(config.bqScoresTable, SCORES_SCHEMA);
+  await ensureTable('cvs',               CVS_SCHEMA);
 }
 
 async function ensureTable(name, schema) {
@@ -93,11 +100,35 @@ export async function getTopJobs(minScore = 60, limit = 100) {
       SELECT
         j.id, j.url, j.company, j.title, j.location,
         s.score, s.remote, s.seniority, s.missing_skills,
-        s.salary_mentioned, s.summary, s.scored_at
+        s.wlb_signals, s.ai_proof, s.stability,
+        s.salary_mentioned, s.summary, s.scored_at,
+        c.cv_url
       FROM \`${config.bqProject}.${config.bqDataset}.${config.bqJobsTable}\` j
       JOIN \`${config.bqProject}.${config.bqDataset}.${config.bqScoresTable}\` s
         ON j.id = s.job_id
+      LEFT JOIN \`${config.bqProject}.${config.bqDataset}.cvs\` c
+        ON j.id = c.job_id
       WHERE s.score >= ${minScore}
+      ORDER BY s.score DESC
+      LIMIT ${limit}
+    `,
+    useLegacySql: false,
+  });
+  return rows;
+}
+
+export async function getJobsPendingCV(minScore = 65, limit = 50) {
+  const [rows] = await bq().query({
+    query: `
+      SELECT j.id, j.url, j.company, j.title, j.location,
+             s.score, s.remote, s.seniority, s.missing_skills, s.summary
+      FROM \`${config.bqProject}.${config.bqDataset}.${config.bqJobsTable}\` j
+      JOIN \`${config.bqProject}.${config.bqDataset}.${config.bqScoresTable}\` s
+        ON j.id = s.job_id
+      LEFT JOIN \`${config.bqProject}.${config.bqDataset}.cvs\` c
+        ON j.id = c.job_id
+      WHERE s.score >= ${minScore}
+        AND c.job_id IS NULL
       ORDER BY s.score DESC
       LIMIT ${limit}
     `,
@@ -118,4 +149,10 @@ export async function insertScores(scores) {
   if (!scores.length) return;
   await dataset().table(config.bqScoresTable).insert(scores);
   console.log(`Inserted ${scores.length} scores into BigQuery`);
+}
+
+export async function insertCVs(cvs) {
+  if (!cvs.length) return;
+  await dataset().table('cvs').insert(cvs);
+  console.log(`Inserted ${cvs.length} CV records into BigQuery`);
 }

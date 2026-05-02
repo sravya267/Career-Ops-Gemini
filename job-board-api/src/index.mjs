@@ -2,7 +2,8 @@ import 'dotenv/config';
 import { createServer } from 'http';
 import { config }       from './config.mjs';
 import { runPipeline }  from './pipeline.mjs';
-import { getTopJobs }   from './storage.mjs';
+import { getTopJobs, getJobsPendingCV, insertCVs } from './storage.mjs';
+import { generateCVBatch }                         from './cv-generator.mjs';
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin':  '*',
@@ -42,6 +43,20 @@ const server = createServer(async (req, res) => {
       json(res, 200, jobs);
     } catch (err) {
       console.error('[server] /jobs error:', err.message);
+      json(res, 500, { error: err.message });
+    }
+    return;
+  }
+
+  if (url === '/generate-cvs' && method === 'POST') {
+    try {
+      const pending = await getJobsPendingCV(config.cvMinScore);
+      if (!pending.length) { json(res, 200, { status: 'ok', cvs: 0, message: 'no pending jobs' }); return; }
+      const cvs = await generateCVBatch(pending, pending);
+      if (cvs.length) await insertCVs(cvs);
+      json(res, 200, { status: 'ok', cvs: cvs.length });
+    } catch (err) {
+      console.error('[server] /generate-cvs error:', err.message);
       json(res, 500, { error: err.message });
     }
     return;

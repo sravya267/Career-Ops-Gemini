@@ -15,6 +15,9 @@ export const config = {
   maxJobsPerRun:    parseInt(process.env.MAX_JOBS_PER_RUN || '50'),
   fetchTimeoutMs:   parseInt(process.env.FETCH_TIMEOUT_MS || '30000'),
   fetchDescriptions: process.env.FETCH_DESCRIPTIONS === 'true',
+  gcsBucket:        process.env.GCS_BUCKET               || '',
+  cvBaseHtmlPath:   process.env.CV_BASE_HTML_PATH         || 'templates/cv-base.html',
+  cvMinScore:       parseInt(process.env.CV_MIN_SCORE      || '65'),
   portals:          loadPortals(),
 };
 
