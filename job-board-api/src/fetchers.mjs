@@ -260,11 +260,31 @@ function makeCompanyFilter(blocklist) {
   return (company) => !blocklist.some(b => company.toLowerCase().includes(b));
 }
 
+// Keep only US-based or remote/worldwide roles.
+// Empty location = keep (many remote jobs omit it entirely).
+const US_PATTERN = /\b(remote|worldwide|anywhere|global|us|usa|united states?|north america|new york|san francisco|seattle|austin|boston|chicago|los angeles|denver|atlanta|dallas|houston|miami|phoenix|portland|raleigh|washington|virginia|california|texas|florida|new york|illinois|georgia|north carolina|colorado|oregon|massachusetts|pennsylvania|ohio|michigan|arizona|minnesota|wisconsin|nevada|maryland|connecticut|indiana|tennessee)\b/i;
+
+// Locations that are clearly outside the US
+const NON_US_PATTERN = /\b(uk|united kingdom|england|london|manchester|edinburgh|germany|berlin|munich|frankfurt|france|paris|amsterdam|netherlands|canada|toronto|vancouver|montreal|india|bangalore|bengaluru|mumbai|delhi|hyderabad|pune|chennai|australia|sydney|melbourne|singapore|japan|tokyo|china|beijing|shanghai|brazil|s[aã]o paulo|mexico|bogot[aá]|buenos aires|dubai|uae|ireland|dublin|spain|madrid|barcelona|portugal|lisbon|sweden|stockholm|denmark|copenhagen|norway|oslo|finland|helsinki|switzerland|zurich|belgium|brussels|poland|warsaw|austria|vienna|czech|ukraine|israel|tel aviv|south africa|cape town|johannesburg|new zealand|auckland|wellington|philippines|jakarta|indonesia|malaysia|kuala lumpur|thailand|bangkok|vietnam|korea|seoul|taiwan|taipei|hong kong|pakistan|nigeria|kenya|egypt|turkey|istanbul|russia|moscow)\b/i;
+
+function makeLocationFilter() {
+  return (location) => {
+    if (!location) return true;               // unknown — keep
+    const loc = location.trim();
+    if (!loc) return true;
+    if (NON_US_PATTERN.test(loc)) return false;  // clearly non-US — drop
+    if (US_PATTERN.test(loc)) return true;       // US or remote — keep
+    // Anything else (e.g. generic city names not matched): keep to avoid over-filtering
+    return true;
+  };
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export async function fetchAllJobs(companies = config.portals) {
-  const titleFilter   = makeTitleFilter(config.titleKeywords, config.titleExclude);
-  const companyFilter = makeCompanyFilter(config.companyBlocklist);
+  const titleFilter    = makeTitleFilter(config.titleKeywords, config.titleExclude);
+  const companyFilter  = makeCompanyFilter(config.companyBlocklist);
+  const locationFilter = makeLocationFilter();
 
   // 1. Broad remote job platforms (no company list needed)
   const [jobicyJobs, wwrJobs, remotiveJobs] = await Promise.all([
@@ -296,7 +316,7 @@ export async function fetchAllJobs(companies = config.portals) {
         if (type === 'greenhouse' && config.fetchDescriptions) {
           jobs = await enrichGreenhouseDescriptions(jobs, boardToken);
         }
-        return jobs.filter(j => j.url && titleFilter(j.title));
+        return jobs.filter(j => j.url && titleFilter(j.title) && locationFilter(j.location));
       } catch (err) {
         errors.push({ company: company.name, error: err.message });
         return [];
