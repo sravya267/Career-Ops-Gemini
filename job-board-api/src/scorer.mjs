@@ -23,6 +23,22 @@ async function throttle() {
   _lastCallAt = Date.now();
 }
 
+// Retry with exponential backoff on 429 rate-limit errors
+async function withRetry(fn, maxRetries = 5) {
+  let delay = _rateLimitMs;
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err) {
+      const is429 = err.message?.includes('429') || err.message?.toLowerCase().includes('rate') || err.message?.toLowerCase().includes('quota');
+      if (!is429 || attempt === maxRetries) throw err;
+      const wait = delay * Math.pow(2, attempt);
+      console.log(`  rate limited — waiting ${Math.round(wait/1000)}s before retry ${attempt + 1}/${maxRetries}`);
+      await sleep(wait);
+    }
+  }
+}
+
 // Probe each model tier once per container instance.
 // Respects GEMINI_MODEL env var as a hard override (skips probing).
 async function resolveModel() {
@@ -38,9 +54,11 @@ async function resolveModel() {
 
   // Hard override via env var — trust the user, skip probing
   if (process.env.GEMINI_MODEL) {
-    _rateLimitMs = 1000;
+    // Preview models have ~5 RPM; stable models handle 60 RPM
+    const isPreview = config.geminiModel.includes('preview') || config.geminiModel.includes('pro');
+    _rateLimitMs = isPreview ? 15000 : 1000;
     _activeModel = client.getGenerativeModel({ model: config.geminiModel, generationConfig: genConfig });
-    console.log(`Using model (env override): ${config.geminiModel}`);
+    console.log(`Using model (env override): ${config.geminiModel} — rate limit ${_rateLimitMs}ms`);
     return _activeModel;
   }
 
@@ -138,7 +156,7 @@ function parseResponse(text) {
 export async function scoreJob(job) {
   const model = await resolveModel();
   await throttle();
-  const result = await model.generateContent(buildPrompt(job));
+  const result = await withRetry(() => model.generateContent(buildPrompt(job)));
   // gemini-2.5-pro thinking model puts output in non-thought parts.
   // Extract only non-thinking parts; fall back to response.text() for other models.
   const parts = result.response.candidates?.[0]?.content?.parts || [];
