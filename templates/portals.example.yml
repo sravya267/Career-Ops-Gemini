@@ -100,6 +100,33 @@ title_filter:
     - "Head"
     - "Director"
 
+# -- Location filter --
+# Applied to the location field returned by each ATS API.
+# At least 1 positive must match (or leave positive empty to allow all).
+# Any negative match causes the job to be excluded.
+# Case-insensitive substring matching.
+# [CUSTOMIZE] Set to match your target geography.
+
+location_filter:
+  positive:
+    - "remote"
+    - "united states"
+    - "us"
+    - "usa"
+    - "anywhere"
+  negative:
+    - "germany"
+    - "uk"
+    - "united kingdom"
+    - "canada"
+    - "australia"
+    - "india"
+    - "brazil"
+    - "europe"
+    - "emea"
+    - "latam"
+    - "apac"
+
 # -- Search queries --
 # Each query triggers a WebSearch. Use site: to filter by portal.
 # The scanner extracts title, URL, and company from results.
