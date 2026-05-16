@@ -1,35 +1,226 @@
 [
-  {"name": "GitLab",        "careers_url": "https://boards.greenhouse.io/gitlab",          "note": "fully remote, strong WLB"},
-  {"name": "Automattic",    "careers_url": "https://boards.greenhouse.io/automattic",       "note": "fully remote, WordPress parent, legendary WLB"},
-  {"name": "Zapier",        "careers_url": "https://boards.greenhouse.io/zapier",           "note": "fully remote, no-meeting culture"},
-  {"name": "Elastic",       "careers_url": "https://boards.greenhouse.io/elastic",          "note": "remote-first, search/analytics platform"},
-  {"name": "Databricks",    "careers_url": "https://boards.greenhouse.io/databricks",       "note": "data+AI platform, strong hiring"},
-  {"name": "dbt Labs",      "careers_url": "https://boards.greenhouse.io/dbtlabsinc",       "note": "remote, data transformation platform"},
-  {"name": "Fivetran",      "careers_url": "https://boards.greenhouse.io/fivetran",         "note": "remote, data integration"},
-  {"name": "Astronomer",    "careers_url": "https://boards.greenhouse.io/astronomer",       "note": "remote, Airflow platform"},
-  {"name": "Confluent",     "careers_url": "https://boards.greenhouse.io/confluent",        "note": "remote options, Kafka platform"},
-  {"name": "Cloudflare",    "careers_url": "https://boards.greenhouse.io/cloudflare",       "note": "remote options, stable/profitable"},
-  {"name": "HashiCorp",     "careers_url": "https://boards.greenhouse.io/hashicorp",        "note": "remote-first, cloud infra"},
-  {"name": "PagerDuty",     "careers_url": "https://boards.greenhouse.io/pagerduty",        "note": "remote options, stable enterprise"},
-  {"name": "Okta",          "careers_url": "https://boards.greenhouse.io/okta",             "note": "remote, identity/security, very stable"},
-  {"name": "Twilio",        "careers_url": "https://boards.greenhouse.io/twilio",           "note": "remote options, communications platform"},
-  {"name": "Airbyte",       "careers_url": "https://jobs.ashbyhq.com/airbyte",              "note": "remote, open-source data integration"},
-  {"name": "Hightouch",     "careers_url": "https://jobs.ashbyhq.com/hightouch",            "note": "remote, data activation"},
-  {"name": "Atlan",         "careers_url": "https://jobs.ashbyhq.com/atlan",                "note": "remote, data catalog"},
-  {"name": "Buffer",        "careers_url": "https://boards.greenhouse.io/buffer",           "note": "fully remote, famous 4-day workweek"},
-  {"name": "Doist",         "careers_url": "https://boards.greenhouse.io/doist",            "note": "fully remote, async-first, Todoist maker"},
-  {"name": "SAS Institute", "careers_url": "https://boards.greenhouse.io/sas",              "note": "remote options, analytics pioneer, stable — never laid off"},
-  {"name": "Teradata",      "careers_url": "https://boards.greenhouse.io/teradata",         "note": "remote options, enterprise data warehouse, very stable"},
-  {"name": "Booz Allen",    "careers_url": "https://boards.greenhouse.io/boozallenhamilton","note": "remote options, gov consulting, extreme job security"},
-  {"name": "Leidos",        "careers_url": "https://boards.greenhouse.io/leidos",           "note": "remote options, defense/gov data, very stable"},
-  {"name": "MITRE",         "careers_url": "https://boards.greenhouse.io/mitre",            "note": "nonprofit, government research, excellent WLB"},
-
-  {"name": "Yardi Systems",      "careers_url": "https://jobs.ashbyhq.com/yardi",              "note": "property management software, very stable, real estate tech — Ashby"},
-  {"name": "Redfin",             "careers_url": "https://boards.greenhouse.io/redfin",            "note": "real estate tech, data-driven, remote-friendly"},
-  {"name": "Opendoor",           "careers_url": "https://jobs.ashbyhq.com/opendoor",              "note": "iBuyer proptech, heavy data/ML, remote roles"},
-  {"name": "Compass",            "careers_url": "https://boards.greenhouse.io/compass",           "note": "real estate brokerage platform, large data team"},
-  {"name": "AppFolio",           "careers_url": "https://boards.greenhouse.io/appfolio",          "note": "property management SaaS, remote options, real estate tech"},
-  {"name": "MRI Software",       "careers_url": "https://jobs.ashbyhq.com/mrisoftware",           "note": "real estate software, global, domain match to JLL"},
-  {"name": "HouseCanary",        "careers_url": "https://jobs.ashbyhq.com/housecanary",           "note": "real estate AVM and analytics, data-heavy"},
-  {"name": "Cherre",             "careers_url": "https://jobs.ashbyhq.com/cherre",                "note": "real estate data platform, analytics-first"}
+  {
+    "name": "GitLab",
+    "careers_url": "https://boards.greenhouse.io/gitlab",
+    "note": "fully remote, strong WLB",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Automattic",
+    "careers_url": "https://boards.greenhouse.io/automattic",
+    "note": "fully remote, WordPress parent, legendary WLB",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Zapier",
+    "careers_url": "https://boards.greenhouse.io/zapier",
+    "note": "fully remote, no-meeting culture",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Elastic",
+    "careers_url": "https://boards.greenhouse.io/elastic",
+    "note": "remote-first, search/analytics platform",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Databricks",
+    "careers_url": "https://boards.greenhouse.io/databricks",
+    "note": "data+AI platform, strong hiring",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "dbt Labs",
+    "careers_url": "https://boards.greenhouse.io/dbtlabsinc",
+    "note": "remote, data transformation platform",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Fivetran",
+    "careers_url": "https://boards.greenhouse.io/fivetran",
+    "note": "remote, data integration",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Astronomer",
+    "careers_url": "https://boards.greenhouse.io/astronomer",
+    "note": "remote, Airflow platform",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Confluent",
+    "careers_url": "https://boards.greenhouse.io/confluent",
+    "note": "remote options, Kafka platform",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Cloudflare",
+    "careers_url": "https://boards.greenhouse.io/cloudflare",
+    "note": "remote options, stable/profitable",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "HashiCorp",
+    "careers_url": "https://boards.greenhouse.io/hashicorp",
+    "note": "remote-first, cloud infra",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "PagerDuty",
+    "careers_url": "https://boards.greenhouse.io/pagerduty",
+    "note": "remote options, stable enterprise",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Okta",
+    "careers_url": "https://boards.greenhouse.io/okta",
+    "note": "remote, identity/security, very stable",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Twilio",
+    "careers_url": "https://boards.greenhouse.io/twilio",
+    "note": "remote options, communications platform",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Airbyte",
+    "careers_url": "https://jobs.ashbyhq.com/airbyte",
+    "note": "remote, open-source data integration",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Hightouch",
+    "careers_url": "https://jobs.ashbyhq.com/hightouch",
+    "note": "remote, data activation",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Atlan",
+    "careers_url": "https://jobs.ashbyhq.com/atlan",
+    "note": "remote, data catalog",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Buffer",
+    "careers_url": "https://boards.greenhouse.io/buffer",
+    "note": "fully remote, famous 4-day workweek",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Doist",
+    "careers_url": "https://boards.greenhouse.io/doist",
+    "note": "fully remote, async-first, Todoist maker",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "SAS Institute",
+    "careers_url": "https://boards.greenhouse.io/sas",
+    "note": "remote options, analytics pioneer, stable \u2014 never laid off",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Teradata",
+    "careers_url": "https://boards.greenhouse.io/teradata",
+    "note": "remote options, enterprise data warehouse, very stable",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Booz Allen",
+    "careers_url": "https://boards.greenhouse.io/boozallenhamilton",
+    "note": "remote options, gov consulting, extreme job security",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Leidos",
+    "careers_url": "https://boards.greenhouse.io/leidos",
+    "note": "remote options, defense/gov data, very stable",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "MITRE",
+    "careers_url": "https://boards.greenhouse.io/mitre",
+    "note": "nonprofit, government research, excellent WLB",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Yardi Systems",
+    "careers_url": "https://jobs.ashbyhq.com/yardi",
+    "note": "property management software, very stable, real estate tech \u2014 Ashby",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Redfin",
+    "careers_url": "https://boards.greenhouse.io/redfin",
+    "note": "real estate tech, data-driven, remote-friendly",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Opendoor",
+    "careers_url": "https://jobs.ashbyhq.com/opendoor",
+    "note": "iBuyer proptech, heavy data/ML, remote roles",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Compass",
+    "careers_url": "https://boards.greenhouse.io/compass",
+    "note": "real estate brokerage platform, large data team",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "AppFolio",
+    "careers_url": "https://boards.greenhouse.io/appfolio",
+    "note": "property management SaaS, remote options, real estate tech",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "MRI Software",
+    "careers_url": "https://jobs.ashbyhq.com/mrisoftware",
+    "note": "real estate software, global, domain match to JLL",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "HouseCanary",
+    "careers_url": "https://jobs.ashbyhq.com/housecanary",
+    "note": "real estate AVM and analytics, data-heavy",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  },
+  {
+    "name": "Cherre",
+    "careers_url": "https://jobs.ashbyhq.com/cherre",
+    "note": "real estate data platform, analytics-first",
+    "enabled": false,
+    "_disabled_reason": "Cloud Run IPs blocked by Cloudflare on this ATS. Needs Cloud NAT with static IP to work."
+  }
 ]

@@ -304,7 +304,11 @@ export async function fetchAllJobs(companies = config.portals) {
     .map(c => ({ ...c, _api: detectApi(c) }))
     .filter(c => c._api !== null);
 
-  console.log(`Fetching from ${targets.length} company boards`);
+  if (targets.length === 0) {
+    console.log('Company boards: all disabled (Greenhouse/Ashby/Lever block Cloud Run IPs — needs Cloud NAT with static IP to fix)');
+  } else {
+    console.log(`Fetching from ${targets.length} company boards`);
+  }
 
   const errors = [];
   const companyJobs = await parallelFetch(
