@@ -5,8 +5,7 @@ import { fileURLToPath } from 'url';
 import { join, dirname } from 'path';
 import { config }        from './config.mjs';
 import { runPipeline }   from './pipeline.mjs';
-import { getTopJobs, getJobsPendingCV, insertCVs, ensureSchema } from './storage.mjs';
-import { generateCVBatch } from './cv-generator.mjs';
+import { getTopJobs, ensureSchema } from './storage.mjs';
 
 const __dir     = dirname(fileURLToPath(import.meta.url));
 const DASHBOARD = readFileSync(join(__dir, 'dashboard.html'), 'utf-8');
@@ -55,21 +54,6 @@ const server = createServer(async (req, res) => {
       json(res, 200, jobs);
     } catch (err) {
       console.error('[server] /jobs error:', err.message);
-      json(res, 500, { error: err.message });
-    }
-    return;
-  }
-
-  if (url === '/generate-cvs' && method === 'POST') {
-    try {
-      await ensureSchema();
-      const pending = await getJobsPendingCV(config.cvMinScore);
-      if (!pending.length) { json(res, 200, { status: 'ok', cvs: 0, message: 'no pending jobs' }); return; }
-      const cvs = await generateCVBatch(pending, pending.map(j => ({ job_id: j.id, ...j })));
-      if (cvs.length) await insertCVs(cvs);
-      json(res, 200, { status: 'ok', cvs: cvs.length });
-    } catch (err) {
-      console.error('[server] /generate-cvs error:', err.message);
       json(res, 500, { error: err.message });
     }
     return;
