@@ -101,13 +101,10 @@ export async function getTopJobs(minScore = 60, limit = 100) {
         j.id, j.url, j.company, j.title, j.location,
         s.score, s.remote, s.seniority, s.missing_skills,
         s.wlb_signals, s.ai_proof, s.stability,
-        s.salary_mentioned, s.summary, s.scored_at,
-        c.cv_url
+        s.salary_mentioned, s.summary, s.scored_at
       FROM \`${config.bqProject}.${config.bqDataset}.${config.bqJobsTable}\` j
       JOIN \`${config.bqProject}.${config.bqDataset}.${config.bqScoresTable}\` s
         ON j.id = s.job_id
-      LEFT JOIN \`${config.bqProject}.${config.bqDataset}.cvs\` c
-        ON j.id = c.job_id
       WHERE s.score >= ${minScore}
       ORDER BY s.score DESC
       LIMIT ${limit}

@@ -132,7 +132,6 @@
 
     <button class="btn btn-primary" id="btnRefresh">Refresh</button>
     <button class="btn btn-run"     id="btnRun">▶ Run Pipeline</button>
-    <button class="btn btn-cv"      id="btnCVs">⚡ Gen CVs</button>
   </div>
 </header>
 
@@ -140,7 +139,6 @@
   <div class="stat"><span class="stat-val" id="sTotal">–</span><span class="stat-lbl">Total</span></div>
   <div class="stat"><span class="stat-val" id="sTop">–</span><span class="stat-lbl">Score ≥ 80</span></div>
   <div class="stat"><span class="stat-val" id="sRemote">–</span><span class="stat-lbl">Remote</span></div>
-  <div class="stat"><span class="stat-val" id="sCVs">–</span><span class="stat-lbl">CVs ready</span></div>
   <div class="stat"><span class="stat-val" id="sAvg">–</span><span class="stat-lbl">Avg score</span></div>
 </div>
 
@@ -164,7 +162,6 @@
         <th data-col="remote">Remote</th>
         <th data-col="seniority">Level</th>
         <th data-col="missing_skills">Gaps</th>
-        <th>CV</th>
         <th>Apply</th>
       </tr>
     </thead>
@@ -208,11 +205,14 @@
     tbody.innerHTML = '';
     try {
       const res = await fetch(`${API}/jobs?min_score=${minScore}&limit=500`);
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      allJobs = await res.json();
+      if (!res.ok) throw new Error(`HTTP ${res.status} — ${await res.text()}`);
+      const data = await res.json();
+      allJobs = Array.isArray(data) ? data : [];
+      if (!allJobs.length) showToast('No jobs found — try lowering the min score or run the pipeline', 'ok');
       renderTable();
     } catch (err) {
       showToast(`Load failed: ${err.message}`, 'err');
+      tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;color:var(--red);padding:40px">${err.message}</td></tr>`;
     } finally {
       status.style.display = 'none';
     }
@@ -248,7 +248,6 @@
     document.getElementById('sTop').textContent    = rows.filter(j => j.score >= 80).length;
     document.getElementById('sRemote').textContent = rows.filter(j => (j.remote||'').toLowerCase().includes('yes')||
                                                                        (j.remote||'').toLowerCase().includes('remote')).length;
-    document.getElementById('sCVs').textContent    = rows.filter(j => j.cv_url).length;
     const avg = rows.length ? Math.round(rows.reduce((s,j) => s + (+j.score||0), 0) / rows.length) : 0;
     document.getElementById('sAvg').textContent   = avg || '–';
 
@@ -263,9 +262,6 @@
       const gaps       = (j.missing_skills || '')
         .split(',').map(s => s.trim()).filter(Boolean).slice(0, 4)
         .map(s => `<span class="tag">${esc(s)}</span>`).join(' ');
-      const cvCell     = j.cv_url
-        ? `<a class="cv-link" href="${esc(j.cv_url)}" target="_blank" rel="noopener">📄 CV</a>`
-        : '<span style="color:var(--muted);font-size:12px">–</span>';
       const date = j.scored_at ? new Date(j.scored_at.value||j.scored_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
 
       return `<tr>
@@ -275,7 +271,6 @@
         <td><span class="tag ${remClass}">${esc(remLabel)}</span></td>
         <td><span class="tag">${esc(level)}</span></td>
         <td class="missing">${gaps || '<span style="color:var(--muted)">–</span>'}</td>
-        <td>${cvCell}</td>
         <td><a class="job-link" href="${esc(j.url)}" target="_blank" rel="noopener">Apply ↗</a></td>
       </tr>`;
     }).join('');
@@ -338,7 +333,7 @@
       const res = await fetch(`${API}/run`, { method: 'POST' });
       const data = await res.json();
       if (res.ok) {
-        showToast(`Done! +${data.inserted||0} jobs, ${data.scored||0} scored, ${data.cvs||0} CVs`, 'ok');
+        showToast(`Done! +${data.new||0} new jobs, ${data.scored||0} scored`, 'ok');
         loadJobs();
       } else {
         showToast(`Error: ${data.error || res.status}`, 'err');
@@ -348,28 +343,6 @@
     } finally {
       btn.disabled = false;
       btn.textContent = '▶ Run Pipeline';
-    }
-  });
-
-  // ── Generate CVs ──────────────────────────────────────────────────────────────
-  document.getElementById('btnCVs').addEventListener('click', async () => {
-    const btn = document.getElementById('btnCVs');
-    btn.disabled = true;
-    btn.textContent = '⏳ Generating…';
-    try {
-      const res  = await fetch(`${API}/generate-cvs`, { method: 'POST' });
-      const data = await res.json();
-      if (res.ok) {
-        showToast(`Generated ${data.cvs} CVs`, 'ok');
-        loadJobs();
-      } else {
-        showToast(`Error: ${data.error || res.status}`, 'err');
-      }
-    } catch (err) {
-      showToast(`CV error: ${err.message}`, 'err');
-    } finally {
-      btn.disabled = false;
-      btn.textContent = '⚡ Gen CVs';
     }
   });
 
