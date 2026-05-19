@@ -98,7 +98,7 @@ export async function getTopJobs(minScore = 60, limit = 100) {
   const [rows] = await bq().query({
     query: `
       SELECT
-        j.id, j.url, j.company, j.title, j.location,
+        j.id, j.url, j.company, j.title, j.location, j.fetched_at,
         s.score, s.remote, s.seniority, s.missing_skills,
         s.wlb_signals, s.ai_proof, s.stability,
         s.salary_mentioned, s.summary, s.scored_at

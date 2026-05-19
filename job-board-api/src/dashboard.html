@@ -40,6 +40,9 @@
   .btn:hover { opacity: .85; }
   .btn-primary { background: var(--accent); color: #fff; }
   .btn-run     { background: var(--green); color: #fff; }
+  tr.applied td { opacity: .45; }
+  tr.applied .company-name { text-decoration: line-through; }
+  .cb-applied { width: 16px; height: 16px; cursor: pointer; accent-color: var(--green); }
   .btn-cv      { background: var(--yellow); color: #111; }
   .btn:disabled { opacity: .4; cursor: default; }
 
@@ -139,6 +142,7 @@
   <div class="stat"><span class="stat-val" id="sTotal">–</span><span class="stat-lbl">Total</span></div>
   <div class="stat"><span class="stat-val" id="sTop">–</span><span class="stat-lbl">Score ≥ 80</span></div>
   <div class="stat"><span class="stat-val" id="sRemote">–</span><span class="stat-lbl">Remote</span></div>
+  <div class="stat"><span class="stat-val" id="sApplied">–</span><span class="stat-lbl">Applied</span></div>
   <div class="stat"><span class="stat-val" id="sAvg">–</span><span class="stat-lbl">Avg score</span></div>
 </div>
 
@@ -148,6 +152,8 @@
   <span class="pill" data-remote="yes">Remote</span>
   <span class="pill" data-remote="hybrid">Hybrid</span>
   <span class="pill" data-remote="no">Onsite</span>
+  <span class="pill" id="pillApplied" data-applied="false">✓ Applied</span>
+  <span class="pill" id="pillNotApplied" data-applied="pending">Pending</span>
 </div>
 
 <div id="status"><div class="spinner"></div></div>
@@ -162,7 +168,9 @@
         <th data-col="remote">Remote</th>
         <th data-col="seniority">Level</th>
         <th data-col="missing_skills">Gaps</th>
-        <th>Apply</th>
+        <th data-col="fetched_at">Fetched</th>
+        <th>Applied</th>
+        <th>Link</th>
       </tr>
     </thead>
     <tbody id="tbody"></tbody>
@@ -180,6 +188,18 @@
   let sortCol = 'score';
   let sortAsc = false;
   let remoteFilter = 'all';
+  let appliedFilter = 'all';  // 'all' | 'applied' | 'pending'
+
+  // ── Applied tracking (localStorage) ─────────────────────────────────────────
+  function getApplied() {
+    try { return JSON.parse(localStorage.getItem('career_ops_applied') || '{}'); } catch { return {}; }
+  }
+  function setApplied(id, val) {
+    const s = getApplied();
+    if (val) s[id] = true; else delete s[id];
+    localStorage.setItem('career_ops_applied', JSON.stringify(s));
+  }
+  function isApplied(id) { return !!getApplied()[id]; }
 
   // ── Elements ─────────────────────────────────────────────────────────────────
   const tbody   = document.getElementById('tbody');
@@ -228,6 +248,8 @@
         if (remoteFilter === 'hybrid' && !r.includes('hybrid')) return false;
         if (remoteFilter === 'no'     && (r.includes('yes') || r.includes('remote') || r.includes('hybrid'))) return false;
       }
+      if (appliedFilter === 'applied' && !isApplied(j.id)) return false;
+      if (appliedFilter === 'pending' && isApplied(j.id))  return false;
       if (q) {
         const hay = `${j.company} ${j.title} ${j.seniority || ''} ${j.location || ''}`.toLowerCase();
         if (!hay.includes(q)) return false;
@@ -244,12 +266,13 @@
     });
 
     // Stats
-    document.getElementById('sTotal').textContent  = rows.length;
-    document.getElementById('sTop').textContent    = rows.filter(j => j.score >= 80).length;
-    document.getElementById('sRemote').textContent = rows.filter(j => (j.remote||'').toLowerCase().includes('yes')||
-                                                                       (j.remote||'').toLowerCase().includes('remote')).length;
+    document.getElementById('sTotal').textContent   = rows.length;
+    document.getElementById('sTop').textContent     = rows.filter(j => j.score >= 80).length;
+    document.getElementById('sRemote').textContent  = rows.filter(j => (j.remote||'').toLowerCase().includes('yes')||
+                                                                        (j.remote||'').toLowerCase().includes('remote')).length;
+    document.getElementById('sApplied').textContent = allJobs.filter(j => isApplied(j.id)).length;
     const avg = rows.length ? Math.round(rows.reduce((s,j) => s + (+j.score||0), 0) / rows.length) : 0;
-    document.getElementById('sAvg').textContent   = avg || '–';
+    document.getElementById('sAvg').textContent    = avg || '–';
 
     tbody.innerHTML = rows.map(j => {
       const sc = +j.score || 0;
@@ -262,15 +285,18 @@
       const gaps       = (j.missing_skills || '')
         .split(',').map(s => s.trim()).filter(Boolean).slice(0, 4)
         .map(s => `<span class="tag">${esc(s)}</span>`).join(' ');
-      const date = j.scored_at ? new Date(j.scored_at.value||j.scored_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+      const fetchedDate = j.fetched_at ? new Date(j.fetched_at.value||j.fetched_at).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '–';
+      const applied = isApplied(j.id);
 
-      return `<tr>
-        <td><span class="score-badge ${scoreClass}">${sc}</span>${date ? `<br><span style="font-size:10px;color:var(--muted)">${date}</span>` : ''}</td>
+      return `<tr class="${applied ? 'applied' : ''}" data-id="${esc(j.id)}">
+        <td><span class="score-badge ${scoreClass}">${sc}</span></td>
         <td><span class="company-name">${esc(j.company||'')}</span></td>
         <td><a class="job-link" href="${esc(j.url)}" target="_blank" rel="noopener">${esc(j.title||'')}</a></td>
         <td><span class="tag ${remClass}">${esc(remLabel)}</span></td>
         <td><span class="tag">${esc(level)}</span></td>
         <td class="missing">${gaps || '<span style="color:var(--muted)">–</span>'}</td>
+        <td style="color:var(--muted);font-size:12px">${fetchedDate}</td>
+        <td style="text-align:center"><input type="checkbox" class="cb-applied" data-id="${esc(j.id)}" ${applied ? 'checked' : ''}></td>
         <td><a class="job-link" href="${esc(j.url)}" target="_blank" rel="noopener">Apply ↗</a></td>
       </tr>`;
     }).join('');
@@ -293,6 +319,16 @@
     });
   });
 
+  // ── Checkbox delegation ───────────────────────────────────────────────────────
+  tbody.addEventListener('change', e => {
+    if (!e.target.classList.contains('cb-applied')) return;
+    const id = e.target.dataset.id;
+    setApplied(id, e.target.checked);
+    const row = tbody.querySelector(`tr[data-id="${id}"]`);
+    if (row) row.classList.toggle('applied', e.target.checked);
+    document.getElementById('sApplied').textContent = allJobs.filter(j => isApplied(j.id)).length;
+  });
+
   // ── Filters ───────────────────────────────────────────────────────────────────
   document.querySelectorAll('.pill[data-remote]').forEach(p => {
     p.addEventListener('click', () => {
@@ -301,6 +337,19 @@
       remoteFilter = p.dataset.remote;
       renderTable();
     });
+  });
+
+  document.getElementById('pillApplied').addEventListener('click', () => {
+    appliedFilter = appliedFilter === 'applied' ? 'all' : 'applied';
+    document.getElementById('pillApplied').classList.toggle('active', appliedFilter === 'applied');
+    document.getElementById('pillNotApplied').classList.remove('active');
+    renderTable();
+  });
+  document.getElementById('pillNotApplied').addEventListener('click', () => {
+    appliedFilter = appliedFilter === 'pending' ? 'all' : 'pending';
+    document.getElementById('pillNotApplied').classList.toggle('active', appliedFilter === 'pending');
+    document.getElementById('pillApplied').classList.remove('active');
+    renderTable();
   });
 
   search.addEventListener('input', renderTable);
